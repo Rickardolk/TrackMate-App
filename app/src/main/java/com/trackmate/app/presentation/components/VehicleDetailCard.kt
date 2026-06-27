@@ -40,43 +40,26 @@ import com.trackmate.app.presentation.theme.TrackMateTheme
 @Composable
 fun VehicleDetailCard(
     modifier: Modifier = Modifier,
-    isExpanded: Boolean = true,
-    onToggleExpand: (Boolean) -> Unit
+    onDrag: (Float) -> Unit,
+    onDragEnd: () -> Unit
 ) {
 
-    val currentIsExpanded by rememberUpdatedState(isExpanded)
-    val currentOnToggleExpand by rememberUpdatedState(onToggleExpand)
+    val currentOnDrag by rememberUpdatedState(onDrag)
+    val currentOnDragEnd by rememberUpdatedState(onDragEnd)
 
     Box(
         modifier = modifier
             .height(356.dp)
             .pointerInput(Unit) {
-                var totalDrag = 0f
+//                var totalDrag = 0f
 
                 detectVerticalDragGestures(
-                    onDragStart = {totalDrag = 0f},
-                    onDragEnd = {
-                        if (totalDrag > 50f && currentIsExpanded) {
-                            currentOnToggleExpand(false)
-                        } else if (totalDrag < -50f && !currentIsExpanded) {
-                            currentOnToggleExpand(true)
-                        }
-                    }
+                    onDragEnd = { currentOnDragEnd() },
+                    onDragCancel = { currentOnDragEnd() }
                 ) { change, dragAmount ->
                     change.consume()
-                    totalDrag += dragAmount
+                    currentOnDrag(dragAmount)
                 }
-//                detectVerticalDragGestures { change, dragAmount ->
-//                    change.consume()
-//                    //drag it down
-//                    if (dragAmount > 2f && currentIsExpanded) {
-//                        currentOnToggleExpand(false)
-//                    }
-//                    // drag it up
-//                    else if (dragAmount < -2f && !currentIsExpanded) {
-//                        currentOnToggleExpand(true)
-//                    }
-//                }
             }
     ) {
         Column(
@@ -255,7 +238,8 @@ fun VehicleDetailCard(
 private fun View() {
     TrackMateTheme {
         VehicleDetailCard(
-            onToggleExpand = {}
+            onDrag = {},
+            onDragEnd = {}
         )
     }
 }

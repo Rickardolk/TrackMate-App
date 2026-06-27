@@ -1,7 +1,5 @@
 package com.trackmate.app.presentation.screens.onboarding
 
-import android.R
-import android.widget.Space
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

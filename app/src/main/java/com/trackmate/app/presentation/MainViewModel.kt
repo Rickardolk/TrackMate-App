@@ -26,7 +26,7 @@ class MainViewModel @Inject constructor(
                 if (completed) {
                     val currentUser = FirebaseAuth.getInstance().currentUser
                     if (currentUser != null) {
-                        _startDestination.value = Screen.Home.route
+                        _startDestination.value = Screen.Monitor.route
                     } else {
                         _startDestination.value = Screen.Login.route
                     }

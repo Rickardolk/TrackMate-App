@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.trackmate.app.presentation.MainViewModel
 import com.trackmate.app.presentation.navigation.NavGraph
 import com.trackmate.app.presentation.theme.TrackMateTheme

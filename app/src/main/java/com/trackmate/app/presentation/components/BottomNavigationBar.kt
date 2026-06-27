@@ -7,108 +7,78 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.trackmate.app.R
+import com.trackmate.app.presentation.navigation.Screen
 import com.trackmate.app.presentation.theme.TrackMateTheme
 
+data class BottomNavItem(
+    val title: String,
+    val iconId: Int,
+    val route: String
+)
+
 @Composable
-fun BottomNavigationBar() {
+fun BottomNavigationBar(
+    navController: NavController
+) {
+    val items = listOf(
+        BottomNavItem("Monitor", R.drawable.ic_monitor_filled, Screen.Monitor.route),
+        BottomNavItem("Device", R.drawable.ic_car_device_filled, Screen.Device.route),
+        BottomNavItem("History", R.drawable.ic_history_filled, Screen.History.route),
+        BottomNavItem("Profile", R.drawable.ic_person, Screen.Profile.route)
+    )
+
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
     NavigationBar(
         containerColor = MaterialTheme.colorScheme.background,
         tonalElevation = 8.dp
     ) {
-        //home
-        NavigationBarItem(
-            icon = {
-                Icon(
-                    painter = painterResource(R.drawable.ic_home) ,
-                    contentDescription = "Home"
-                )
-            },
-            label = {
-                Text(
-                    text = "Home" ,
-                    fontSize = 10.sp
-                )
-            },
-            selected = true,
-            onClick = { },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = MaterialTheme.colorScheme.primary,
-                unselectedIconColor = MaterialTheme.colorScheme.secondary,
-                selectedTextColor = MaterialTheme.colorScheme.primary,
-                unselectedTextColor = MaterialTheme.colorScheme.secondary,
-                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
-        )
+        items.forEach { item ->
+            val isSelected = currentRoute == item.route
 
-        //vehicles
-        NavigationBarItem(
-            icon = {
-                Icon(
-                    painter = painterResource(R.drawable.ic_motorcycle) ,
-                    contentDescription = "Vehicles"
+            NavigationBarItem(
+                icon = {
+                    Icon(
+                        painter = painterResource(item.iconId),
+                        contentDescription = item.title
+                    )
+                },
+                label = {
+                    Text(
+                        text = item.title,
+                        fontSize = 10.sp
+                    )
+                },
+                selected = isSelected,
+                onClick = {
+                    if (currentRoute != item.route) {
+                        navController.navigate(item.route) {
+                            popUpTo(navController.graph.startDestinationId) {saveState = true}
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                    unselectedIconColor = MaterialTheme.colorScheme.secondary,
+                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                    unselectedTextColor = MaterialTheme.colorScheme.secondary,
+                    indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                 )
-            },
-            label = {
-                Text(
-                    "Vehicles" ,
-                    fontSize = 10.sp
-                )
-            },
-            selected = false,
-            onClick = { },
-            colors = NavigationBarItemDefaults.colors(
-                unselectedIconColor = MaterialTheme.colorScheme.secondary,
-                unselectedTextColor = MaterialTheme.colorScheme.secondary
             )
-        )
+        }
 
-        //reports
-        NavigationBarItem(
-            icon = {
-                Icon(
-                    painter = painterResource(R.drawable.ic_reports) ,
-                    contentDescription = "Reports"
-                )
-            },
-            label = {
-                Text(
-                    text = "Reports" ,
-                    style = MaterialTheme.typography.labelSmall
-                )
-            },
-            selected = false,
-            onClick = { },
-            colors = NavigationBarItemDefaults.colors(
-                unselectedIconColor = MaterialTheme.colorScheme.secondary,
-                unselectedTextColor = MaterialTheme.colorScheme.secondary
-            )
-        )
-
-        //profile
-        NavigationBarItem(
-            icon = {
-                Icon(
-                    painter = painterResource(R.drawable.ic_person) ,
-                    contentDescription = "Profile"
-                )
-            },
-            label = {
-                Text(
-                    text = "Profile" ,
-                    style = MaterialTheme.typography.labelSmall
-                )
-            },
-            selected = false,
-            onClick = { },
-            colors = NavigationBarItemDefaults.colors(
-                unselectedIconColor = MaterialTheme.colorScheme.secondary,
-                unselectedTextColor = MaterialTheme.colorScheme.secondary
-            )
-        )
     }
 }
 
@@ -117,6 +87,8 @@ fun BottomNavigationBar() {
 @Composable
 private fun View() {
     TrackMateTheme{
-        BottomNavigationBar()
+        BottomNavigationBar(
+            navController = rememberNavController()
+        )
     }
 }

@@ -1,4 +1,4 @@
-package com.trackmate.app.presentation.screens.home
+package com.trackmate.app.presentation.screens.monitor
 
 import androidx.lifecycle.ViewModel
 import com.trackmate.app.domain.repository.AuthRepository
@@ -6,7 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @HiltViewModel
-class HomeViewModel @Inject constructor(
+class MonitorViewModel @Inject constructor(
     private val authRepository: AuthRepository
 ) : ViewModel() {
 

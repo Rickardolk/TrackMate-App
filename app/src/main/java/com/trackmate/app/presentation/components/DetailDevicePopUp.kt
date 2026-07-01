@@ -14,16 +14,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.trackmate.app.presentation.screens.monitor.DummyVehicle // Pastikan import ini sesuai lokasi data DummyVehicle Anda
+import com.trackmate.app.domain.model.Vehicle
 
 @Composable
-fun DetailDevicePopUp(vehicle: DummyVehicle) {
+fun DetailDevicePopUp(vehicle: Vehicle) {
     Box(
         modifier = Modifier
             .shadow(8.dp, RoundedCornerShape(12.dp))
-            .background(Color(0xFF212121)) // Warna gelap desain Anda
+            .background(Color(0xFF212121))
             .padding(16.dp)
-            .width(220.dp) // Sesuaikan lebar popup
+            .width(220.dp)
     ) {
         Column {
             Text(
@@ -33,9 +33,14 @@ fun DetailDevicePopUp(vehicle: DummyVehicle) {
             )
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Status Section
             Row(verticalAlignment = Alignment.Top) {
-                Box(modifier = Modifier.padding(top = 4.dp).size(8.dp).clip(CircleShape).background(Color(0xFF10B981))) // Titik hijau
+                Box(
+                    modifier = Modifier
+                        .padding(top = 4.dp)
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF10B981))
+                )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "Status: ${vehicle.status}",
@@ -46,16 +51,29 @@ fun DetailDevicePopUp(vehicle: DummyVehicle) {
             }
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Baterai Section
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = "Baterai:", color = Color.LightGray, fontSize = 10.sp)
-                Spacer(modifier = Modifier.width(8.dp))
-                // Custom Progress Bar
-                Box(modifier = Modifier.weight(1f).height(6.dp).clip(CircleShape).background(Color.DarkGray)) {
-                    Box(modifier = Modifier.fillMaxWidth(vehicle.batteryProgress).height(6.dp).clip(CircleShape).background(Color(0xFF10B981)))
+            // Hanya tampilkan baterai jika data tersedia
+            if (vehicle.batteryText != "-") {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = "Baterai:", color = Color.LightGray, fontSize = 10.sp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(6.dp)
+                            .clip(CircleShape)
+                            .background(Color.DarkGray)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(vehicle.batteryProgress)
+                                .height(6.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF10B981))
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = vehicle.batteryText, color = Color.White, fontSize = 10.sp)
                 }
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text = vehicle.batteryText, color = Color.White, fontSize = 10.sp)
             }
         }
     }

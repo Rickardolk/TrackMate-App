@@ -7,16 +7,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.trackmate.app.presentation.MainViewModel
 import com.trackmate.app.presentation.components.BottomNavigationBar
 import com.trackmate.app.presentation.screens.auth.LoginScreenRoute
 import com.trackmate.app.presentation.screens.auth.RegisterScreenRoute
 import com.trackmate.app.presentation.screens.device.DetailDeviceScreen
 import com.trackmate.app.presentation.screens.device.DeviceScreen
+import com.trackmate.app.presentation.screens.device.ReplayScreen
 import com.trackmate.app.presentation.screens.monitor.MonitorScreen
 import com.trackmate.app.presentation.screens.onboarding.OnboardingScreen
 import com.trackmate.app.presentation.screens.profile.ProfileScreen
@@ -111,6 +114,9 @@ fun NavGraph(
                 MonitorScreen(
                     onNavigateToDetailDeviceScreen = {
                         navController.navigate(Screen.DetailDevice.route)
+                    },
+                    onNavigateToReplayScreen = { vehicleId ->
+                        navController.navigate(Screen.Replay.createRoute(vehicleId))
                     }
                 )
             }
@@ -135,6 +141,17 @@ fun NavGraph(
                 DetailDeviceScreen {
                     navController.popBackStack()
                 }
+            }
+
+            composable(
+                route = Screen.Replay.route,
+                arguments = listOf(navArgument("vehicleId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val vehicleId = backStackEntry.arguments?.getString("vehicleId") ?: ""
+                ReplayScreen(
+                    vehicleId = vehicleId,
+                    onBack = { navController.popBackStack() }
+                )
             }
 
 

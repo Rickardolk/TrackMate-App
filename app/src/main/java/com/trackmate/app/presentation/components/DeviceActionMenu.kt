@@ -18,7 +18,8 @@ import com.trackmate.app.R
 
 @Composable
 fun DeviceActionMenu(
-    onDetailClick: () -> Unit
+    onDetailClick: () -> Unit,
+    onReplayClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -34,8 +35,12 @@ fun DeviceActionMenu(
             label = "Detail",
             onClick = onDetailClick
         )
-        ActionMenuItem(iconRes = R.drawable.ic_my_location, label = "Pelacakan", onClick = {})
-        ActionMenuItem(iconRes = R.drawable.ic_refresh, label = "Putar Ulang", onClick = {})
+        ActionMenuItem(iconRes = R.drawable.ic_my_location , label = "Pelacakan" , onClick = {})
+        ActionMenuItem(
+            iconRes = R.drawable.ic_refresh ,
+            label = "Putar Ulang" ,
+            onClick = onReplayClick
+        )
         ActionMenuItem(iconRes = R.drawable.ic_east, label = "Navigasi", onClick = {})
     }
 }
@@ -56,3 +61,5 @@ fun ActionMenuItem(iconRes: Int, label: String, onClick: () -> Unit) {
         Text(text = label, fontSize = 10.sp, color = Color.DarkGray)
     }
 }
+
+

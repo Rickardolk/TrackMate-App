@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.trackmate.app.presentation.MainViewModel
 import com.trackmate.app.presentation.navigation.NavGraph
+import com.trackmate.app.presentation.screens.splash.SplashScreen
 import com.trackmate.app.presentation.theme.TrackMateTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -20,7 +22,14 @@ class MainActivity : ComponentActivity() {
     private val mainViewModel: MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
+
         super.onCreate(savedInstanceState)
+
+        splashScreen.setKeepOnScreenCondition {
+            !mainViewModel.isReady.value
+        }
+
         enableEdgeToEdge()
         setContent {
             TrackMateTheme {

@@ -1,16 +1,15 @@
 package com.trackmate.app.presentation.screens.auth
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.trackmate.app.domain.repository.AuthRepository
+import com.trackmate.app.presentation.screens.profile.ProfileUiState
 import com.trackmate.app.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -19,51 +18,72 @@ class AuthViewModel @Inject constructor(
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
-    var username by mutableStateOf("")
-        private set
+    // 1. Inisialisasi State menggunakan Data Class RegisterUiState
+    private val _authUiState = MutableStateFlow(AuthUiState())
+    val authUiState: StateFlow<AuthUiState> = _authUiState.asStateFlow()
 
-    var email by mutableStateOf("")
-        private set
+    private val _profileUiState = MutableStateFlow(ProfileUiState())
+    val profileUiState: StateFlow<ProfileUiState> = _profileUiState.asStateFlow()
 
-    var password by mutableStateOf("")
-        private set
-
-    private val _authState = MutableStateFlow<Resource<String>?>(null)
-    val authState: StateFlow<Resource<String>?> = _authState.asStateFlow()
-
+    // 2. Fungsi Update menggunakan .update { it.copy(...) }
     fun onUsernameChange(newUserName: String) {
-        username = newUserName
+        _authUiState.update { it.copy(username = newUserName) }
     }
 
     fun onEmailChange(newEmail: String) {
-        email = newEmail
+        _authUiState.update { it.copy(email = newEmail) }
     }
 
     fun onPasswordChange(newPassword: String) {
-        password = newPassword
+        _authUiState.update { it.copy(password = newPassword) }
     }
 
     fun login() {
-        if (email.isBlank() || password.isBlank()) {
-            _authState.value = Resource.Error("Email dan Password tidak boleh kosong")
+        // Ambil value saat ini dari StateFlow
+        val currentState = _authUiState.value
+
+        if (currentState.email.isBlank() || currentState.password.isBlank()) {
+            _authUiState.update { it.copy(authState = Resource.Error("Email dan Password tidak boleh kosong")) }
             return
         }
         viewModelScope.launch {
-            authRepository.login(email, password).collect { _authState.value = it }
+            authRepository.login(currentState.email, currentState.password).collect { result ->
+                _authUiState.update { it.copy(authState = result) }
+            }
         }
     }
 
     fun register() {
-        if (username.isBlank() || email.isBlank() || password.isBlank()) {
-            _authState.value = Resource.Error("Semua kolom harus diisi")
+        val currentState = _authUiState.value
+
+        if (currentState.username.isBlank() || currentState.email.isBlank() || currentState.password.isBlank()) {
+            _authUiState.update { it.copy(authState = Resource.Error("Semua kolom harus diisi")) }
             return
         }
         viewModelScope.launch {
-            authRepository.register(email, password).collect { _authState.value = it }
+            authRepository.register(currentState.email, currentState.password).collect { result ->
+                _authUiState.update { it.copy(authState = result) }
+            }
         }
     }
 
     fun resetAuthState() {
-        _authState.value = null
+        _authUiState.update { it.copy(authState = null) }
+    }
+
+    fun logout() {
+        // Tampilkan status loading jika resource mendukungnya
+        _profileUiState.update { it.copy(logoutState = Resource.Loading) }
+
+        viewModelScope.launch {
+            // Asumsi AuthRepository Anda memiliki fungsi logout() yang mereturn Flow<Resource<String>>
+            authRepository.logout().collect { result ->
+                _profileUiState.update { it.copy(logoutState = result) }
+            }
+        }
+    }
+
+    fun resetLogoutState() {
+        _profileUiState.update { it.copy(logoutState = null) }
     }
 }

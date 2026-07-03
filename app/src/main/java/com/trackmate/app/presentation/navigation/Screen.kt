@@ -14,4 +14,5 @@ sealed class Screen(
     object Replay : Screen("replay_screen/{vehicleId}") {
         fun createRoute(vehicleId: String) = "replay_screen/$vehicleId"
     }
+    object Welcome : Screen("welcome_screen")
 }

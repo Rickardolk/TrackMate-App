@@ -24,11 +24,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.tooling.preview.Preview
+import android.content.res.Configuration
+import com.trackmate.app.presentation.theme.TrackMateTheme
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun OnboardingScreen(
+fun OnboardingScreen2(
     modifier: Modifier = Modifier,
     onNavigateToAuth: () -> Unit
 ) {
@@ -192,6 +195,21 @@ fun PagerScreen(
                 .fillMaxHeight()
                 .clip(RoundedCornerShape(32.dp))
                 .background(Color(0xFFE0E0E0))
+        )
+    }
+}
+
+@Preview(name = "Light Mode", showBackground = true)
+@Preview(
+    name = "Dark Mode",
+    showBackground = true,
+    uiMode = Configuration.UI_MODE_NIGHT_YES
+)
+@Composable
+private fun OnboardingScreenPreview() {
+    TrackMateTheme {
+        OnboardingScreen2(
+            onNavigateToAuth = {}
         )
     }
 }

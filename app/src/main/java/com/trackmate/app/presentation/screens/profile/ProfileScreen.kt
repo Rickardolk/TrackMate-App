@@ -14,6 +14,9 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,6 +28,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.trackmate.app.presentation.screens.auth.AuthViewModel
+import com.trackmate.app.utils.Resource
 
 // ─── Colors ───────────────────────────────────────────────────────────────────
 
@@ -38,9 +44,33 @@ private val DividerColor    = Color(0xFFD1D1D6)
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 @Composable
+fun ProfileScreenRoute(
+    onNavigateToLogin: () -> Unit,
+    viewModel: AuthViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.profileUiState.collectAsState()
+
+    // Amati perubahan status logout
+    LaunchedEffect(uiState.logoutState) {
+        if (uiState.logoutState is Resource.Success) {
+            viewModel.resetLogoutState()
+            onNavigateToLogin()
+        }
+    }
+
+    ProfileScreen(
+        uiState = uiState,
+        onLogOut = viewModel::logout,
+        onEditProfile = {},
+        onNotificationPermission = {},
+        onChangePassword = {},
+        onShareApp = {}
+    )
+}
+
+@Composable
 fun ProfileScreen(
-    userName: String = "Praboros Subiantolol",
-    userEmail: String = "praboros@gmail.com",
+    uiState: ProfileUiState,
     onEditProfile: () -> Unit = {},
     onNotificationPermission: () -> Unit = {},
     onChangePassword: () -> Unit = {},
@@ -64,8 +94,8 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.height(10.dp))
 
             ProfileUserCard(
-                name = userName,
-                email = userEmail,
+                name = uiState.userName,
+                email = uiState.userEmail,
                 onClick = onEditProfile
             )
 
@@ -292,10 +322,10 @@ private fun SettingItemCard(
 
 // ─── Preview ──────────────────────────────────────────────────────────────────
 
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun ProfileScreenPreview() {
-    MaterialTheme {
-        ProfileScreen()
-    }
-}
+//@Preview(showBackground = true, showSystemUi = true)
+//@Composable
+//fun ProfileScreenPreview() {
+//    MaterialTheme {
+//        ProfileScreen()
+//    }
+//}

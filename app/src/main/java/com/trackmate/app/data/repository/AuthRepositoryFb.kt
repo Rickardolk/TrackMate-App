@@ -45,8 +45,14 @@ class AuthRepositoryFb @Inject constructor(
         }
     }
 
-    override fun logout() {
-        firebaseAuth.signOut()
+    override suspend fun logout(): Flow<Resource<String>> = flow {
+        emit(Resource.Loading)
+        try {
+            firebaseAuth.signOut()
+            emit(Resource.Success("Logout berhasil"))
+        } catch (e: Exception) {
+            emit(Resource.Error(translateError(e)))
+        }
     }
 
     private fun translateError(exception: Exception) :String {

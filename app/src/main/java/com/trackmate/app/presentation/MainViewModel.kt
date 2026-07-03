@@ -35,7 +35,7 @@ class MainViewModel @Inject constructor(
                     _startDestination.value = if (currentUser != null) {
                         Screen.Monitor.route
                     } else {
-                        Screen.Login.route
+                        Screen.Welcome.route
                     }
                 } else {
                     _startDestination.value = Screen.Onboarding.route

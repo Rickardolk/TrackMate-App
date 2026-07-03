@@ -17,6 +17,7 @@ import com.trackmate.app.presentation.MainViewModel
 import com.trackmate.app.presentation.components.BottomNavigationBar
 import com.trackmate.app.presentation.screens.auth.LoginScreenRoute
 import com.trackmate.app.presentation.screens.auth.RegisterScreenRoute
+import com.trackmate.app.presentation.screens.auth.WelcomeScreen
 import com.trackmate.app.presentation.screens.device.DetailDeviceScreen
 import com.trackmate.app.presentation.screens.device.DeviceScreen
 import com.trackmate.app.presentation.screens.device.ReplayScreen
@@ -24,6 +25,7 @@ import com.trackmate.app.presentation.screens.monitor.MonitorScreen
 import com.trackmate.app.presentation.screens.onboarding.OnboardingScreen
 import com.trackmate.app.presentation.screens.profile.ProfileScreen
 import com.trackmate.app.presentation.screens.history.HistoryScreen
+import com.trackmate.app.presentation.screens.profile.ProfileScreenRoute
 
 @Composable
 fun NavGraph(
@@ -75,7 +77,7 @@ fun NavGraph(
                 OnboardingScreen(
                     onNavigateToAuth = {
                         mainViewModel.saveOnboardingState(completed = true)
-                        navController.navigate(Screen.Login.route) {
+                        navController.navigate(Screen.Welcome.route) {
                             popUpTo(Screen.Onboarding.route) {
                                 inclusive = true
                             }
@@ -84,15 +86,25 @@ fun NavGraph(
                 )
             }
 
+            composable(route = Screen.Welcome.route) {
+                WelcomeScreen(
+                    onNavigateToLogin = { navController.navigate(Screen.Login.route) },
+                    onNavigateToRegister = {navController.navigate(Screen.Register.route)}
+                )
+            }
+
             composable(route = Screen.Login.route) {
                 LoginScreenRoute(
                     onLoginSuccess = {
                         navController.navigate(Screen.Monitor.route) {
-                            popUpTo(Screen.Login.route) { inclusive = true }
+                            popUpTo(Screen.Welcome.route) { inclusive = true }
                         }
                     },
-                    onNavigateToRegister = {
-                        navController.navigate(Screen.Register.route)
+                    onNavigateToRegister = { navController.navigate(Screen.Register.route) },
+                    onBackClick = {
+                        navController.navigate(Screen.Welcome.route) {
+                            popUpTo(0) { inclusive = true}
+                        }
                     }
                 )
             }
@@ -101,12 +113,13 @@ fun NavGraph(
                 RegisterScreenRoute(
                     onRegisterSuccess = {
                         navController.navigate(Screen.Monitor.route) {
-                            popUpTo(Screen.Login.route) { inclusive = true }
+                            popUpTo(Screen.Welcome.route) { inclusive = true }
                         }
                     },
                     onNavigateToLogin = {
                         navController.popBackStack()
-                    }
+                    },
+                    onBackClick = { navController.popBackStack() }
                 )
             }
 
@@ -134,7 +147,13 @@ fun NavGraph(
             }
 
             composable(route = Screen.Profile.route) {
-                ProfileScreen()
+                ProfileScreenRoute(
+                    onNavigateToLogin = {
+                        navController.navigate(Screen.Welcome.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                )
             }
 
             composable(route = Screen.DetailDevice.route) {

@@ -23,8 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import androidx.hilt.navigation.compose.hiltViewModel           // ← TAMBAHAN
-import androidx.lifecycle.compose.collectAsStateWithLifecycle  // ← TAMBAHAN
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
@@ -42,18 +42,14 @@ import kotlinx.coroutines.launch
 @SuppressLint("MissingPermission")
 @Composable
 fun MonitorScreen(
-    onNavigateToDetailDeviceScreen: () -> Unit = {},
+    onNavigateToDetailDeviceScreen: (deviceId: String) -> Unit = {},
     onNavigateToReplayScreen: (vehicleId: String) -> Unit = {},
-    viewModel: MonitorViewModel = hiltViewModel()              // ← TAMBAHAN
+    viewModel: MonitorViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-
-    // ← TAMBAHAN: Observe state dari ViewModel
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
-
     var hasLocationPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -64,7 +60,6 @@ fun MonitorScreen(
     var showLabels by remember { mutableStateOf(true) }
     var currentMapType by remember { mutableStateOf(MapType.NORMAL) }
     var selectedVehicleId by remember { mutableStateOf<String?>(null) }
-
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(LatLng(-7.5, 110.5), 8f)
     }
@@ -92,7 +87,7 @@ fun MonitorScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
 
-        // --- LAYER 0: MAPS ---
+        // layer 0 maps
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
@@ -108,7 +103,6 @@ fun MonitorScreen(
             ),
             onMapClick = { selectedVehicleId = null }
         ) {
-            // ← PERUBAHAN: Gunakan uiState.vehicles dari ViewModel, bukan dummyVehicles
             uiState.vehicles.forEach { vehicle ->
                 val vehicleLatLng = LatLng(vehicle.latitude, vehicle.longitude)
 
@@ -125,8 +119,6 @@ fun MonitorScreen(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         if (selectedVehicleId == vehicle.id) {
-                            // Anda perlu menyesuaikan DetailDevicePopUp
-                            // agar menerima domain model Vehicle, bukan DummyVehicle
                             DetailDevicePopUp(vehicle = vehicle)
                             Spacer(modifier = Modifier.height(4.dp))
                         } else if (showLabels) {
@@ -136,8 +128,6 @@ fun MonitorScreen(
                                     .background(Color.White)
                                     .padding(horizontal = 12.dp, vertical = 6.dp)
                             ) {
-                                // Tampilkan ID kendaraan sebagai label
-                                // Sesuaikan jika nanti ada field "plate" di Firestore
                                 Text(
                                     text = vehicle.plate.ifEmpty { vehicle.id },
                                     fontSize = 12.sp,
@@ -159,25 +149,23 @@ fun MonitorScreen(
             }
         }
 
-        // --- LAYER 1: HEADER ---
+        //layer 1 header
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color.White)
+                .background(color = MaterialTheme.colorScheme.background)
                 .padding(top = 24.dp, bottom = 12.dp),
             contentAlignment = Alignment.Center
         ) {
-            Text("Monitor", fontSize = 20.sp, fontWeight = FontWeight.Medium, color = Color.Black)
+            Text("Monitor", fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = Color.Black)
         }
 
-        // --- LAYER 1b: LOADING INDICATOR ---
         if (uiState.isLoading) {
             CircularProgressIndicator(
                 modifier = Modifier.align(Alignment.Center)
             )
         }
 
-        // --- LAYER 1c: ERROR MESSAGE ---
         uiState.errorMessage?.let { message ->
             Box(
                 modifier = Modifier
@@ -190,7 +178,7 @@ fun MonitorScreen(
             }
         }
 
-        // --- LAYER 2: RIGHT CONTROLS ---
+        // right button
         Column(
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -230,7 +218,7 @@ fun MonitorScreen(
             }
         }
 
-        // --- LAYER 3: LEFT CONTROLS ---
+        // left button
         val leftControlBottomPadding = if (selectedVehicleId != null) 100.dp else 32.dp
 
         Column(
@@ -264,7 +252,7 @@ fun MonitorScreen(
             }
         }
 
-        // --- LAYER 4: BOTTOM ACTION MENU ---
+        // button action menu
         AnimatedVisibility(
             visible = selectedVehicleId != null,
             enter = slideInVertically(initialOffsetY = { it }),
@@ -275,7 +263,11 @@ fun MonitorScreen(
                 .padding(bottom = 16.dp)
         ) {
             DeviceActionMenu(
-                onDetailClick = { onNavigateToDetailDeviceScreen() },
+                onDetailClick = {
+                    selectedVehicleId?.let { id ->
+                        onNavigateToDetailDeviceScreen(id)
+                    }
+                },
                 onReplayClick = {
                     selectedVehicleId?.let { id ->
                         onNavigateToReplayScreen(id)

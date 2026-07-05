@@ -3,7 +3,9 @@ package com.trackmate.app.presentation.screens.device
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.trackmate.app.R
+import com.google.firebase.auth.FirebaseAuth
+import com.trackmate.app.domain.repository.VehicleRepository
+import com.trackmate.app.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -11,72 +13,85 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// Catatan: Karena model ini berisi warna (Color) dan Drawable (Int) yang merupakan elemen UI Compose,
-// sangat disarankan menyimpannya di lapisan presentasi, bukan di domain/model.
 data class DeviceItem(
-    val id: String, val name: String, val plate: String, val statusText: String,
-    val statusColor: Color, val isOffline: Boolean, val detailIcon: Int,
-    val detailText: String, val actionText: String, val actionColor: Color
+    val id: String,
+    val name: String,
+    val plate: String,
+    val vehicleType: String,
+    val statusText: String,
+    val statusColor: Color,
+    val isOffline: Boolean,
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0
 )
 
 @HiltViewModel
-class DeviceViewModel @Inject constructor() : ViewModel() {
+class DeviceViewModel @Inject constructor(
+    private val vehicleRepository: VehicleRepository
+) : ViewModel() {
 
-    // Simulasi data dari DataRepositoryImpl nantinya
-    private val rawDevices = listOf(
-        DeviceItem("1", "Truck Box XXX", "AB 1234 XYZ", "Berjalan", Color(0xFF10B981), false, R.drawable.ic_speed, "45 km/h", "Lacak >", Color(0xFF3B82F6)),
-        DeviceItem("2", "Beat XXX", "AB 1234 XYZ", "Offline", Color(0xFF9CA3AF), true, R.drawable.ic_history_outlined, "Terakhir: Jl. Sesat...", "Detail >", Color(0xFF9CA3AF)),
-        DeviceItem("3", "Van XXX", "AB 1234 XYZ", "Diam", Color(0xFF10B981), false, R.drawable.ic_my_location, "Jl. Belum Jadi...", "Lacak >", Color(0xFF3B82F6)),
-        DeviceItem("4", "Truck Box YYY", "AB 5678 XYZ", "Online", Color(0xFF10B981), false, R.drawable.ic_speed, "45 km/h", "Lacak >", Color(0xFF3B82F6)),
-        DeviceItem("5", "Pick Up XXX", "AB 9012 XYZ", "Berjalan", Color(0xFF10B981), false, R.drawable.ic_speed, "60 km/h", "Lacak >", Color(0xFF3B82F6)),
-        DeviceItem("6", "Motor YYY", "AB 3456 XYZ", "Offline", Color(0xFF9CA3AF), true, R.drawable.ic_history_outlined, "Terakhir: Jl. Kenangan...", "Detail >", Color(0xFF9CA3AF))
-    )
+    // 1. Inisialisasi State Tunggal
+    private val _uiState = MutableStateFlow(DeviceUiState())
+    val uiState: StateFlow<DeviceUiState> = _uiState.asStateFlow()
 
-    private val _allDevices = MutableStateFlow(rawDevices)
+    private var currentObserveJob: kotlinx.coroutines.Job? = null
 
-    // State untuk Pencarian
-    private val _searchQuery = MutableStateFlow("")
-    val searchQuery = _searchQuery.asStateFlow()
-
-    // State untuk Tab yang dipilih
-    private val _selectedTab = MutableStateFlow("Semua")
-    val selectedTab = _selectedTab.asStateFlow()
-
-    // Menghitung jumlah untuk header Tab secara dinamis
-    val totalCount = rawDevices.size
-    val onlineCount = rawDevices.count { !it.isOffline }
-    val offlineCount = rawDevices.count { it.isOffline }
-
-    // Logika Filter Reaktif: Otomatis memicu saat _allDevices, _searchQuery, atau _selectedTab berubah
-    val filteredDevices: StateFlow<List<DeviceItem>> = combine(
-        _allDevices, _searchQuery, _selectedTab
-    ) { devices, query, tab ->
-        devices.filter { device ->
-            // Filter Tab
-            val matchesTab = when (tab) {
-                "Online" -> !device.isOffline
-                "Offline" -> device.isOffline
-                else -> true
+    init {
+        FirebaseAuth.getInstance().addAuthStateListener { auth ->
+            val userId = auth.currentUser?.uid
+            currentObserveJob?.cancel()
+            if (userId != null) {
+                currentObserveJob = viewModelScope.launch {
+                    observeDevices(userId)
+                }
+            } else {
+                // User logout — kembalikan ke state awal yang kosong
+                _uiState.value = DeviceUiState()
             }
-            // Filter Pencarian (Cari di nama dan plat nomor)
-            val matchesQuery = device.name.contains(query, ignoreCase = true) ||
-                    device.plate.contains(query, ignoreCase = true)
-
-            matchesTab && matchesQuery
         }
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = emptyList()
-    )
+    }
+
+    private suspend fun observeDevices(userId: String) {
+        _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+
+        vehicleRepository.getUserVehiclesRealtime(userId).collect { result ->
+            when (result) {
+                is Resource.Loading -> {
+                    _uiState.update { it.copy(isLoading = true) }
+                }
+                is Resource.Success -> {
+                    val devices = result.data?.map { vehicle ->
+                        DeviceItem(
+                            id = vehicle.id,
+                            name = vehicle.vehicleName.ifEmpty { vehicle.id },
+                            plate = vehicle.plate,
+                            vehicleType = vehicle.vehicleType,
+                            statusText = "Online",
+                            statusColor = Color(0xFF10B981),
+                            isOffline = false, // Sesuaikan dengan logika asli Anda
+                            latitude = vehicle.latitude,
+                            longitude = vehicle.longitude
+                        )
+                    } ?: emptyList()
+
+                    _uiState.update { it.copy(isLoading = false, allDevices = devices) }
+                }
+                is Resource.Error -> {
+                    _uiState.update { it.copy(isLoading = false, errorMessage = result.message) }
+                }
+            }
+        }
+    }
 
     fun onSearchQueryChanged(query: String) {
-        _searchQuery.value = query
+        _uiState.update { it.copy(searchQuery = query) }
     }
 
     fun onTabSelected(tab: String) {
-        _selectedTab.value = tab
+        _uiState.update { it.copy(selectedTab = tab) }
     }
 }

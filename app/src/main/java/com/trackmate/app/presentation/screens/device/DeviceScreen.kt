@@ -5,16 +5,43 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,30 +54,47 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.trackmate.app.R
+import com.trackmate.app.utils.myShadow
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
+
+
+@Composable
+fun DeviceScreenRoute(
+    onNavigateToDetail: (deviceId: String) -> Unit,
+    onNavigateToAddDevice: () -> Unit,
+    viewModel: DeviceViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    DeviceScreen(
+        uiState = uiState,
+        onSearchQueryChanged = viewModel::onSearchQueryChanged,
+        onTabSelected = viewModel::onTabSelected,
+        onNavigateToDetail = onNavigateToDetail,
+        onNavigateToAddDevice = onNavigateToAddDevice
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DeviceScreen(
-    onNavigateToDetail: () -> Unit = {},
-    // Injeksi ViewModel
-    viewModel: DeviceViewModel = hiltViewModel()
+    uiState: DeviceUiState,
+    onSearchQueryChanged: (String) -> Unit,
+    onTabSelected: (String) -> Unit,
+    onNavigateToDetail: (deviceId: String) -> Unit = {},
+    onNavigateToAddDevice: () -> Unit = {}
 ) {
-    // Collect State dari ViewModel
-    val searchQuery by viewModel.searchQuery.collectAsState()
-    val selectedTab by viewModel.selectedTab.collectAsState()
-    val filteredDevices by viewModel.filteredDevices.collectAsState()
-
     val listState = rememberLazyListState()
 
-    // --- LOGIKA QUICK RETURN SCROLL (Murni UI) ---
-    val searchBarHeightDp = 84.dp
+    // --- LOGIKA QUICK RETURN SCROLL ---
+    val searchBarHeightDp = 90.dp // Disesuaikan sedikit untuk bayangan desain baru
     val searchBarHeightPx = with(LocalDensity.current) { searchBarHeightDp.toPx() }
     var searchBarOffsetPx by remember { mutableFloatStateOf(0f) }
 
@@ -83,99 +127,213 @@ fun DeviceScreen(
         }
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF8F9FA))
+            .background(color = MaterialTheme.colorScheme.background)
     ) {
-        // --- BAGIAN 1: HEADER & TABS ---
-        Column(
-            modifier = Modifier.fillMaxWidth().background(Color.White)
-        ) {
-            Text(
-                text = "Perangkat",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black,
-                modifier = Modifier.fillMaxWidth().padding(top = 48.dp, bottom = 16.dp),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-            )
+        Column(modifier = Modifier.fillMaxSize()) {
 
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+            // --- BAGIAN 1: HEADER & TABS (Desain Baru) ---
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .myShadow(
+                        color = Color(0xFF000000).copy(alpha = 0.05f),
+                        offsetY = 4.dp,
+                        blurRadius = 8.dp
+                    )
+                    .background(Color.White)
             ) {
-                // Menggunakan hitungan dinamis dari ViewModel
-                DeviceTab(text = "Semua (${viewModel.totalCount})", isSelected = selectedTab == "Semua", onClick = { viewModel.onTabSelected("Semua") })
-                DeviceTab(text = "Online (${viewModel.onlineCount})", dotColor = Color(0xFF10B981), isSelected = selectedTab == "Online", onClick = { viewModel.onTabSelected("Online") })
-                DeviceTab(text = "Offline (${viewModel.offlineCount})", dotColor = Color(0xFF9CA3AF), isSelected = selectedTab == "Offline", onClick = { viewModel.onTabSelected("Offline") })
-            }
-            HorizontalDivider(color = Color(0xFFE5E7EB), thickness = 1.dp)
-        }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 24.dp)
+                ) {
+                    Text(
+                        text = "Perangkat",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF23262F),
+                        modifier = Modifier.align(Alignment.Center)
+                    )
 
-        // --- BAGIAN 2: KONTEN ---
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .clipToBounds()
-                .nestedScroll(nestedScrollConnection)
-        ) {
-            // Daftar Perangkat
-            LazyColumn(
-                state = listState,
-                contentPadding = PaddingValues(top = searchBarHeightDp, bottom = 100.dp, start = 24.dp, end = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                // Menggunakan daftar yang sudah difilter dari ViewModel
-                items(filteredDevices, key = { it.id }) { device ->
-                    DeviceCard(
-                        device = device,
-                        onClick = { onNavigateToDetail() }
+                    IconButton(
+                        onClick = onNavigateToAddDevice,
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(end = 16.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_add),
+                            contentDescription = "ic add",
+                            modifier = Modifier.size(24.dp),
+                            tint = Color(0xFF23262F)
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceAround
+                ) {
+                    DeviceTab(
+                        text = "Semua (${uiState.totalCount})",
+                        isSelected = uiState.selectedTab == "Semua",
+                        onClick = { onTabSelected("Semua") }
+                    )
+                    DeviceTab(
+                        text = "Online (${uiState.onlineCount})",
+                        isSelected = uiState.selectedTab == "Online",
+                        dotColor = Color(0xFF2A9D8F),
+                        onClick = { onTabSelected("Online") }
+                    )
+                    DeviceTab(
+                        text = "Offline (${uiState.offlineCount})",
+                        isSelected = uiState.selectedTab == "Offline",
+                        dotColor = Color(0xFF8E9295),
+                        onClick = { onTabSelected("Offline") }
                     )
                 }
             }
 
-            // Search Bar & Filter
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // --- BAGIAN 2: AREA KONTEN (Card Lama + Search Baru) ---
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .offset { IntOffset(x = 0, y = searchBarOffsetPx.roundToInt()) }
-                    .background(Color(0xFFF8F9FA))
+                    .fillMaxSize()
+                    .clipToBounds()
+                    .nestedScroll(nestedScrollConnection)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+
+                // 2A: Daftar Perangkat (LazyColumn)
+                LazyColumn(
+                    state = listState,
+                    contentPadding = PaddingValues(top = searchBarHeightDp, bottom = 100.dp, start = 16.dp, end = 16.dp), // Padding diubah menyesuaikan desain baru
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    OutlinedTextField(
-                        value = searchQuery,
-                        // Update query ke ViewModel
-                        onValueChange = { viewModel.onSearchQueryChanged(it) },
-                        placeholder = { Text("Cari nama kendaraan atau plat...", color = Color.Gray, fontSize = 12.sp) },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search", tint = Color.Gray) },
-                        shape = RoundedCornerShape(16.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White,
-                            unfocusedBorderColor = Color(0xFFE5E7EB),
-                            focusedBorderColor = Color.Black
-                        ),
-                        modifier = Modifier.weight(1f).height(52.dp),
-                        singleLine = true
+                    items(uiState.filteredDevices, key = { it.id }) { device ->
+                        DeviceCard(
+                            device = device,
+                            onClick = { onNavigateToDetail(device.id) }
+                        )
+                    }
+                }
+
+                // Status Loading
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center)
                     )
+                }
 
-                    Spacer(modifier = Modifier.width(12.dp))
+                // Status Error
+                uiState.errorMessage?.let { msg ->
+                    Box(modifier = Modifier.align(Alignment.Center).padding(24.dp)) {
+                        Text(text = msg, color = Color.Gray, fontSize = 14.sp, textAlign = TextAlign.Center)
+                    }
+                }
 
-                    Box(
-                        modifier = Modifier
-                            .size(52.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(16.dp))
-                            .background(Color.White)
-                            .clickable { /* TODO: Open Filter */ },
-                        contentAlignment = Alignment.Center
+                // Status Kosong
+                if (!uiState.isLoading && uiState.filteredDevices.isEmpty() && uiState.errorMessage == null) {
+                    Box(modifier = Modifier.align(Alignment.Center).padding(24.dp)) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("📭", fontSize = 48.sp)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Belum ada perangkat terdaftar.\nTambahkan perangkat via tombol + di atas.",
+                                color = Color.Gray,
+                                fontSize = 14.sp,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+
+                // 2B: Search & Filter Floating (Desain Baru)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .offset { IntOffset(x = 0, y = searchBarOffsetPx.roundToInt()) }
+                        // Background menutupi item di belakangnya saat search bar terlihat
+                        .background(MaterialTheme.colorScheme.background)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(painterResource(id = R.drawable.ic_filter), contentDescription = "Filter", tint = Color.Black, modifier = Modifier.size(24.dp))
+                        OutlinedTextField(
+                            value = uiState.searchQuery,
+                            onValueChange = { onSearchQueryChanged(it) },
+                            placeholder = {
+                                Text(
+                                    text = "Cari nama kendaraan atau plat...",
+                                    fontSize = 14.sp,
+                                    color = Color(0xFF8E9295),
+                                    fontWeight = FontWeight.Normal
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_search),
+                                    contentDescription = "ic search",
+                                    modifier = Modifier.size(24.dp),
+                                    tint = Color(0xFF8E9295)
+                                )
+                            },
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(58.dp)
+                                .padding(start = 16.dp)
+                                .myShadow(
+                                    color = Color(0xFF000000).copy(alpha = 0.06f),
+                                    offsetY = 4.dp,
+                                    blurRadius = 12.dp
+                                ),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                                unfocusedBorderColor = Color(0xFF8E9295),
+                                focusedBorderColor = Color(0xFF23262F),
+                                focusedLeadingIconColor = Color(0xFF23262F),
+                                unfocusedLeadingIconColor = Color(0xFF8E9295),
+                                focusedTextColor = Color(0xFF23262F)
+                            )
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Box(
+                            modifier = Modifier
+                                .padding(end = 16.dp)
+                                .size(58.dp)
+                                .myShadow(
+                                    color = Color(0xFF000000).copy(alpha = 0.06f),
+                                    offsetY = 4.dp,
+                                    blurRadius = 12.dp
+                                )
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(MaterialTheme.colorScheme.background)
+                                .border(
+                                    width = 1.dp,
+                                    color = Color(0xFF8E9295),
+                                    shape = RoundedCornerShape(16.dp)
+                                )
+                                .clickable {  },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_filter),
+                                contentDescription = "Filter",
+                                tint = Color(0xFF23262F),
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -190,47 +348,67 @@ fun DeviceTab(
     text: String,
     dotColor: Color? = null,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit // Tambahan parameter onClick
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable { onClick() }
+    TextButton(
+        onClick = onClick
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(bottom = 8.dp)
-        ) {
-            if (dotColor != null) {
-                Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(dotColor))
-                Spacer(modifier = Modifier.width(6.dp))
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (dotColor != null) {
+                    Box(modifier = Modifier
+                        .size(6.dp)
+                        .clip(CircleShape)
+                        .background(dotColor))
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                Text(
+                    text = text,
+                    fontSize = 16.sp,
+                    fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
+                    color = if (isSelected) Color(0xFF23262F) else Color(0xFF8E9295)
+                )
             }
-            Text(
-                text = text,
-                fontSize = 14.sp,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                color = if (isSelected) Color.Black else Color.Gray
-            )
-        }
-        if (isSelected) {
-            Box(modifier = Modifier.height(2.dp).width(80.dp).background(Color.Black))
-        } else {
-            Box(modifier = Modifier.height(2.dp).width(80.dp).background(Color.Transparent))
+            Spacer(modifier = Modifier.height(8.dp))
+            if (isSelected) {
+                Box(modifier = Modifier
+                    .height(2.dp)
+                    .width(80.dp)
+                    .background(Color(0xFF23262F)))
+            } else {
+                Box(modifier = Modifier
+                    .height(2.dp)
+                    .width(80.dp)
+                    .background(Color.Transparent))
+            }
         }
     }
 }
 
+// DeviceCard LAMA TETAP SAMA
 @Composable
 fun DeviceCard(
     device: DeviceItem,
     onClick: () -> Unit
 ) {
+    val vehicleIconRes = when (device.vehicleType.lowercase()) {
+        "motor" -> R.drawable.ic_motorcycle
+        "truk" -> R.drawable.ic_filled_truck
+        "van" -> R.drawable.ic_filled_van
+        "pick up" -> R.drawable.ic_filled_car
+        else -> R.drawable.ic_filled_car
+    }
+
     Card(
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        modifier = Modifier
+        colors = CardDefaults.cardColors(containerColor = Color.White),        modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
+            .myShadow(
+                offsetY = 4.dp,
+                blurRadius = 12.dp,
+                color = Color(0xFF000000).copy(alpha = 0.05f)
+            )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -242,8 +420,8 @@ fun DeviceCard(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.ic_car_top_view),
-                        contentDescription = "Vehicle",
+                        painter = painterResource(id = vehicleIconRes),
+                        contentDescription = device.vehicleType,
                         tint = if (device.isOffline) Color.Gray else Color(0xFF10B981),
                         modifier = Modifier.size(24.dp)
                     )
@@ -253,7 +431,7 @@ fun DeviceCard(
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(text = device.name, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-                    Text(text = device.plate, fontSize = 12.sp, color = Color.Gray)
+                    Text(text = device.plate.ifEmpty { "Plat tidak tersedia" }, fontSize = 12.sp, color = Color.Gray)
                 }
 
                 Row(
@@ -261,18 +439,16 @@ fun DeviceCard(
                     modifier = Modifier
                         .clip(RoundedCornerShape(16.dp))
                         .background(if (device.isOffline) Color(0xFFF3F4F6) else Color(0xFFE6F4EA))
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .padding(horizontal = 12.dp, vertical = 2.dp)
                 ) {
                     Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(device.statusColor))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(text = device.statusText, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = device.statusColor)
                 }
             }
-
             Spacer(modifier = Modifier.height(16.dp))
             HorizontalDivider(color = Color(0xFFF3F4F6))
             Spacer(modifier = Modifier.height(16.dp))
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -280,23 +456,25 @@ fun DeviceCard(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        painter = painterResource(id = device.detailIcon),
-                        contentDescription = "Detail",
-                        tint = Color.Black,
-                        modifier = Modifier.size(16.dp)
+                        painter = painterResource(id = R.drawable.ic_my_location),
+                        contentDescription = null,
+                        tint = Color.Gray,
+                        modifier = Modifier.size(14.dp)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = device.detailText, fontSize = 12.sp, color = Color.Black)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = if (device.latitude != 0.0 && device.longitude != 0.0) {
+                            "${"%.4f".format(device.latitude)}, ${"%.4f".format(device.longitude)}"
+                        } else {
+                            "Koordinat tidak tersedia"
+                        },
+                        fontSize = 11.sp,
+                        color = Color.Gray
+                    )
                 }
-
-                Text(
-                    text = device.actionText,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = device.actionColor,
-                    modifier = Modifier.clickable { /* TODO: Navigasi Aksi */ }
-                )
+                Text(text = device.vehicleType.ifEmpty { "-" }, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color(0xFF3B82F6))
             }
         }
     }
 }
+

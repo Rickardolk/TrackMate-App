@@ -5,8 +5,11 @@ data class Vehicle(
     val latitude: Double,
     val longitude: Double,
     val plate: String = "",
+    val vehicleName: String = "",
+    val vehicleType: String = "",
     val activationTime: String = "-",
     val status: String = "Aktif",
     val batteryProgress: Float = 0f,
     val batteryText: String = "-"
 )
+

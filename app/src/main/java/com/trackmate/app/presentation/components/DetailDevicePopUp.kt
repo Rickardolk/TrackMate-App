@@ -14,7 +14,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.tooling.preview.Preview
+import android.content.res.Configuration
 import com.trackmate.app.domain.model.Vehicle
+import com.trackmate.app.presentation.theme.TrackMateTheme
 
 @Composable
 fun DetailDevicePopUp(vehicle: Vehicle) {
@@ -33,10 +36,9 @@ fun DetailDevicePopUp(vehicle: Vehicle) {
             )
             Spacer(modifier = Modifier.height(12.dp))
 
-            Row(verticalAlignment = Alignment.Top) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
-                        .padding(top = 4.dp)
                         .size(8.dp)
                         .clip(CircleShape)
                         .background(Color(0xFF10B981))
@@ -75,6 +77,38 @@ fun DetailDevicePopUp(vehicle: Vehicle) {
                     Text(text = vehicle.batteryText, color = Color.White, fontSize = 10.sp)
                 }
             }
+        }
+    }
+}
+
+@Preview(name = "Light Mode", showBackground = true)
+@Preview(
+    name = "Dark Mode",
+    showBackground = true,
+    uiMode = Configuration.UI_MODE_NIGHT_YES
+)
+@Composable
+private fun DetailDevicePopUpPreview() {
+    TrackMateTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Gray)
+                .padding(24.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            DetailDevicePopUp(
+                vehicle = Vehicle(
+                    id = "1",
+                    latitude = 0.0,
+                    longitude = 0.0,
+                    plate = "B 1234 ABC",
+                    activationTime = "2023-10-27 10:00",
+                    status = "Bergerak",
+                    batteryProgress = 0.75f,
+                    batteryText = "75%"
+                )
+            )
         }
     }
 }

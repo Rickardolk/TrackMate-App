@@ -18,8 +18,12 @@ import com.trackmate.app.presentation.components.BottomNavigationBar
 import com.trackmate.app.presentation.screens.auth.LoginScreenRoute
 import com.trackmate.app.presentation.screens.auth.RegisterScreenRoute
 import com.trackmate.app.presentation.screens.auth.WelcomeScreen
+import com.trackmate.app.presentation.screens.device.AddDeviceScreen
 import com.trackmate.app.presentation.screens.device.DetailDeviceScreen
+import com.trackmate.app.presentation.screens.device.DeviceEditScreen
 import com.trackmate.app.presentation.screens.device.DeviceScreen
+import com.trackmate.app.presentation.screens.device.DeviceScreenRoute
+import com.trackmate.app.presentation.screens.device.GeofencingScreen
 import com.trackmate.app.presentation.screens.device.ReplayScreen
 import com.trackmate.app.presentation.screens.monitor.MonitorScreen
 import com.trackmate.app.presentation.screens.onboarding.OnboardingScreen
@@ -125,8 +129,8 @@ fun NavGraph(
 
             composable(route = Screen.Monitor.route) {
                 MonitorScreen(
-                    onNavigateToDetailDeviceScreen = {
-                        navController.navigate(Screen.DetailDevice.route)
+                    onNavigateToDetailDeviceScreen = { deviceId ->
+                        navController.navigate(Screen.DetailDevice.createRoute(deviceId))
                     },
                     onNavigateToReplayScreen = { vehicleId ->
                         navController.navigate(Screen.Replay.createRoute(vehicleId))
@@ -135,10 +139,19 @@ fun NavGraph(
             }
 
             composable(route = Screen.Device.route) {
-                DeviceScreen(
-                    onNavigateToDetail = {
-                        navController.navigate(Screen.DetailDevice.route)
+                DeviceScreenRoute(
+                    onNavigateToDetail = { deviceId ->
+                        navController.navigate(Screen.DetailDevice.createRoute(deviceId))
+                    },
+                    onNavigateToAddDevice = {
+                        navController.navigate(Screen.AddDevice.route)
                     }
+                )
+            }
+
+            composable(route = Screen.AddDevice.route) {
+                AddDeviceScreen(
+                    onBack = {navController.popBackStack()}
                 )
             }
 
@@ -156,10 +169,32 @@ fun NavGraph(
                 )
             }
 
-            composable(route = Screen.DetailDevice.route) {
-                DetailDeviceScreen {
-                    navController.popBackStack()
-                }
+            composable(
+                route = Screen.DetailDevice.route,
+                arguments = listOf(navArgument("deviceId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val deviceId = backStackEntry.arguments?.getString("deviceId") ?: ""
+                DetailDeviceScreen(
+                    deviceId = deviceId,
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToEdit = { id ->
+                        navController.navigate(Screen.DeviceEdit.createRoute(id))
+                    },
+                    onNavigateToGeofencing = { id ->
+                        navController.navigate(Screen.Geofencing.createRoute(id))
+                    }
+                )
+            }
+
+            composable(
+                route = Screen.DeviceEdit.route,
+                arguments = listOf(navArgument("deviceId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val deviceId = backStackEntry.arguments?.getString("deviceId") ?: ""
+                DeviceEditScreen(
+                    deviceId = deviceId,
+                    onBack = { navController.popBackStack() }
+                )
             }
 
             composable(
@@ -169,6 +204,17 @@ fun NavGraph(
                 val vehicleId = backStackEntry.arguments?.getString("vehicleId") ?: ""
                 ReplayScreen(
                     vehicleId = vehicleId,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Screen.Geofencing.route,
+                arguments = listOf(navArgument("deviceId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val deviceId = backStackEntry.arguments?.getString("deviceId") ?: ""
+                GeofencingScreen(
+                    deviceId = deviceId,
                     onBack = { navController.popBackStack() }
                 )
             }

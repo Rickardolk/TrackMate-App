@@ -2,6 +2,7 @@ package com.trackmate.app.presentation.screens.monitor
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
 import com.trackmate.app.domain.model.Vehicle
 import com.trackmate.app.domain.repository.VehicleRepository
 import com.trackmate.app.utils.Resource
@@ -26,31 +27,34 @@ class MonitorViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(MonitorUiState())
     val uiState: StateFlow<MonitorUiState> = _uiState.asStateFlow()
 
+    private var currentObserveJob: kotlinx.coroutines.Job? = null
+
     init {
-        observeVehicles()
+        FirebaseAuth.getInstance().addAuthStateListener { auth ->
+            val userId = auth.currentUser?.uid
+            currentObserveJob?.cancel()
+            if (userId != null) {
+                currentObserveJob = viewModelScope.launch {
+                    observeUserVehicles(userId)
+                }
+            } else {
+                _uiState.value = MonitorUiState()  // kosongkan saat logout
+            }
+        }
     }
 
-    private fun observeVehicles() {
-        viewModelScope.launch {
-            vehicleRepository.getVehiclesRealtime().collect { result ->
-                when (result) {
-                    is Resource.Loading -> {
-                        _uiState.value = _uiState.value.copy(isLoading = true)
-                    }
-                    is Resource.Success -> {
-                        _uiState.value = _uiState.value.copy(
-                            vehicles = result.data ?: emptyList(),
-                            isLoading = false,
-                            errorMessage = null
-                        )
-                    }
-                    is Resource.Error -> {
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            errorMessage = result.message
-                        )
-                    }
-                }
+    private suspend fun observeUserVehicles(userId: String) {
+        vehicleRepository.getUserVehiclesRealtime(userId).collect { result ->
+            when (result) {
+                is Resource.Loading -> _uiState.value = _uiState.value.copy(isLoading = true)
+                is Resource.Success -> _uiState.value = MonitorUiState(
+                    vehicles = result.data ?: emptyList(),
+                    isLoading = false
+                )
+                is Resource.Error -> _uiState.value = MonitorUiState(
+                    isLoading = false,
+                    errorMessage = result.message
+                )
             }
         }
     }

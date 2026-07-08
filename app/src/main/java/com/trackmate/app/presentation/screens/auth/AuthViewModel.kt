@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.trackmate.app.domain.repository.AuthRepository
 import com.trackmate.app.presentation.screens.profile.ProfileUiState
+import com.trackmate.app.utils.GeofenceManager
 import com.trackmate.app.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,17 +16,16 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val geofenceManager: GeofenceManager
 ) : ViewModel() {
 
-    // 1. Inisialisasi State menggunakan Data Class RegisterUiState
     private val _authUiState = MutableStateFlow(AuthUiState())
     val authUiState: StateFlow<AuthUiState> = _authUiState.asStateFlow()
 
     private val _profileUiState = MutableStateFlow(ProfileUiState())
     val profileUiState: StateFlow<ProfileUiState> = _profileUiState.asStateFlow()
 
-    // 2. Fungsi Update menggunakan .update { it.copy(...) }
     fun onUsernameChange(newUserName: String) {
         _authUiState.update { it.copy(username = newUserName) }
     }
@@ -39,7 +39,6 @@ class AuthViewModel @Inject constructor(
     }
 
     fun login() {
-        // Ambil value saat ini dari StateFlow
         val currentState = _authUiState.value
 
         if (currentState.email.isBlank() || currentState.password.isBlank()) {
@@ -72,11 +71,10 @@ class AuthViewModel @Inject constructor(
     }
 
     fun logout() {
-        // Tampilkan status loading jika resource mendukungnya
         _profileUiState.update { it.copy(logoutState = Resource.Loading) }
 
         viewModelScope.launch {
-            // Asumsi AuthRepository Anda memiliki fungsi logout() yang mereturn Flow<Resource<String>>
+            geofenceManager.stopAllGeofenceChecks()
             authRepository.logout().collect { result ->
                 _profileUiState.update { it.copy(logoutState = result) }
             }

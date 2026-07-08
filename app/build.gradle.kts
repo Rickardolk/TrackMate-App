@@ -88,4 +88,15 @@ dependencies {
 
     // SplashScreen
     implementation(libs.androidx.core.splashscreen)
+
+    // WorkManager
+    implementation(libs.androidx.work.runtime.ktx)
+
+    // Hilt WorkManager Integration
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
+
+    // Retrofit & GSON
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.gson)
 }

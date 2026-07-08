@@ -74,7 +74,7 @@ fun AddDeviceScreen(
             )
         }
 
-        // ── Form ──────────────────────────────────────────────────────────
+        // form
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -82,16 +82,16 @@ fun AddDeviceScreen(
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // ID Perangkat
+            // id device
             AddDeviceField(
                 label = "ID Perangkat",
                 value = uiState.deviceId,
                 onValueChange = viewModel::onDeviceIdChanged,
                 placeholder = "Contoh: motor_1",
-                hint = "ID ini harus sesuai dengan ID dokumen di Firestore"
+                hint = "ID ini harus sesuai dengan yang tertera pada perangkat"
             )
 
-            // Nama Kendaraan
+            // nama kendaraan
             AddDeviceField(
                 label = "Nama Kendaraan",
                 value = uiState.vehicleName,
@@ -99,7 +99,7 @@ fun AddDeviceScreen(
                 placeholder = "Contoh: Motor Harian"
             )
 
-            // Plat Nomor
+            // plat nomor
             AddDeviceField(
                 label = "Plat Nomor",
                 value = uiState.plateNumber,
@@ -107,7 +107,7 @@ fun AddDeviceScreen(
                 placeholder = "Contoh: AB 1234 XYZ"
             )
 
-            // Jenis Kendaraan — Dropdown
+            // dropdown kendaraan
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
                     text = "Jenis Kendaraan",
@@ -177,7 +177,7 @@ fun AddDeviceScreen(
                 }
             }
 
-            // Error message
+            // error message
             if (uiState.errorMessage != null) {
                 Row(
                     modifier = Modifier
@@ -199,7 +199,7 @@ fun AddDeviceScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Tombol Simpan
+            // tombol simpan
             Button(
                 onClick = { viewModel.addDevice() },
                 modifier = Modifier
@@ -228,7 +228,8 @@ fun AddDeviceScreen(
     }
 }
 
-// ── Komponen field input ────────────────────────────────────────────────────
+
+// field input
 
 @Composable
 private fun AddDeviceField(
@@ -272,7 +273,7 @@ private fun AddDeviceField(
     }
 }
 
-// ── Dialog sukses ───────────────────────────────────────────────────────────
+// dialog success
 
 @Composable
 private fun SuccessDialog(onDismiss: () -> Unit) {
@@ -315,7 +316,7 @@ private fun SuccessDialog(onDismiss: () -> Unit) {
     }
 }
 
-// ── Preview ─────────────────────────────────────────────────────────────────
+// preview
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable

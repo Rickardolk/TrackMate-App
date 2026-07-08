@@ -18,22 +18,16 @@ class VehicleRepositoryImpl @Inject constructor(
     private val firestore: FirebaseFirestore
 ) : VehicleRepository {
 
-    // Fungsi 1: getUserVehiclesRealtime — GANTI TOTAL
+    //getUserVehiclesRealtime
     override fun getUserVehiclesRealtime(userId: String): Flow<Resource<List<Vehicle>>> =
         callbackFlow {
             trySend(Resource.Loading)
 
-            // Simpan semua listener kendaraan agar bisa di-remove saat flow dibatalkan
             val kendaraanListeners = mutableMapOf<String, com.google.firebase.firestore.ListenerRegistration>()
-
-            // State koordinat per deviceId — diupdate oleh listener kendaraan masing-masing
             val coordinatesMap = mutableMapOf<String, Pair<Double, Double>>()
-
-            // State data user per deviceId — diupdate oleh listener devices
             val userDeviceMap = mutableMapOf<String, Triple<String, String, String>>()
-            // Triple: vehicleName, plateNumber, vehicleType
 
-            // Fungsi untuk emit ulang semua kendaraan saat ada perubahan apapun
+            // function emitVehicles
             fun emitVehicles() {
                 val vehicles = userDeviceMap.keys.mapNotNull { deviceId ->
                     val coords = coordinatesMap[deviceId] ?: return@mapNotNull null
@@ -50,7 +44,7 @@ class VehicleRepositoryImpl @Inject constructor(
                 trySend(Resource.Success(vehicles))
             }
 
-            // Listener utama: pantau daftar perangkat user di users/{userId}/devices
+            // iistener utama pantau daftar perangkat
             val devicesListener = firestore
                 .collection("users")
                 .document(userId)
@@ -64,7 +58,6 @@ class VehicleRepositoryImpl @Inject constructor(
                     if (snapshot == null) return@addSnapshotListener
 
                     if (snapshot.isEmpty) {
-                        // Hapus semua listener kendaraan jika tidak ada perangkat
                         kendaraanListeners.values.forEach { it.remove() }
                         kendaraanListeners.clear()
                         coordinatesMap.clear()
@@ -83,7 +76,7 @@ class VehicleRepositoryImpl @Inject constructor(
                         userDeviceMap.remove(removedId)
                     }
 
-                    // Update data user untuk setiap perangkat
+                    // update data user untuk setiap perangkat
                     snapshot.documents.forEach { deviceDoc ->
                         val deviceId = deviceDoc.id
                         userDeviceMap[deviceId] = Triple(
@@ -102,21 +95,21 @@ class VehicleRepositoryImpl @Inject constructor(
                                     val lat = kendaraanDoc.getDouble("latitude") ?: 0.0
                                     val lng = kendaraanDoc.getDouble("longitude") ?: 0.0
                                     coordinatesMap[deviceId] = Pair(lat, lng)
-                                    emitVehicles() // ← emit ulang setiap kali koordinat berubah
+                                    emitVehicles()
                                 }
                             kendaraanListeners[deviceId] = kendaraanListener
                         }
                     }
                 }
 
-            // Bersihkan SEMUA listener saat flow dibatalkan
+            // remove semua listener
             awaitClose {
                 devicesListener.remove()
                 kendaraanListeners.values.forEach { it.remove() }
             }
         }
 
-    // Fungsi 2: validateAndRegisterDevice — GANTI TOTAL
+    // function validateAndRegisterDevice
     override suspend fun validateAndRegisterDevice(
         deviceId: String,
         userId: String,
@@ -125,7 +118,7 @@ class VehicleRepositoryImpl @Inject constructor(
         vehicleType: String
     ): Resource<Unit> {
         return try {
-            // Validasi: cek apakah deviceId ada di collection kendaraan
+            // validasi device id
             val deviceDoc = firestore.collection("kendaraan")
                 .document(deviceId)
                 .get()
@@ -135,7 +128,7 @@ class VehicleRepositoryImpl @Inject constructor(
                 return Resource.Error("ID Perangkat tidak valid. Pastikan ID sudah benar.")
             }
 
-            // Simpan ke users/{userId}/devices/{deviceId}
+            // save to user
             val userDeviceData = mapOf(
                 "vehicleName" to vehicleName,
                 "plateNumber" to plateNumber,
@@ -145,7 +138,7 @@ class VehicleRepositoryImpl @Inject constructor(
             firestore.collection("users")
                 .document(userId)
                 .collection("devices")
-                .document(deviceId)        // deviceId sebagai document ID
+                .document(deviceId)
                 .set(userDeviceData)
                 .await()
 
@@ -217,7 +210,7 @@ class VehicleRepositoryImpl @Inject constructor(
         }
     }
 
-    // ── 6. Riwayat lokasi untuk ReplayScreen (existing) ──────────────────
+    // get location history
     override suspend fun getLocationHistory(
         vehicleId: String,
         startTime: String,
@@ -301,7 +294,7 @@ class VehicleRepositoryImpl @Inject constructor(
                 .await()
 
             if (!doc.exists()) {
-                Resource.Success(null)  // belum pernah set geofence
+                Resource.Success(null)
             } else {
                 Resource.Success(
                     GeofenceConfig(

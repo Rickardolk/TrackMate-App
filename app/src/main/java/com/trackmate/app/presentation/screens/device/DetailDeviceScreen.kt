@@ -51,7 +51,7 @@ fun DetailDeviceScreen(
             .fillMaxSize()
             .background(Color(0xFFF8F9FA))
     ) {
-        // ── Header — tambah tombol Edit di kanan ──────────────────────────
+        // header
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -79,7 +79,7 @@ fun DetailDeviceScreen(
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
 
-            // ← TAMBAHAN: Tombol Edit di kanan header
+            // button edit
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -98,7 +98,7 @@ fun DetailDeviceScreen(
             }
         }
 
-        // ── Konten (scroll) ───────────────────────────────────────────────
+        // konten
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -108,10 +108,10 @@ fun DetailDeviceScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Foto kendaraan (tetap sama)
+            // vehicle image
             Box(modifier = Modifier.padding(bottom = 8.dp)) {
                 Image(
-                    painter = painterResource(id = R.drawable.ic_car_top_view),
+                    painter = painterResource(id = R.drawable.img_motorcycle),
                     contentDescription = "Foto Kendaraan",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
@@ -177,7 +177,7 @@ fun DetailDeviceScreen(
                     )
                     // Jenis Kendaraan — read only
                     ReadOnlyInfoRow(
-                        iconRes = R.drawable.ic_car_top_view,
+                        iconRes = R.drawable.ic_outlined_car,
                         label = "Jenis Kendaraan",
                         value = uiState.vehicleType.ifEmpty { "-" }
                     )
@@ -186,7 +186,6 @@ fun DetailDeviceScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // ── Informasi Lainnya ─────────────────────────────────────────
             SectionTitle("Informasi Lainnya")
 
             // Koordinat realtime
@@ -234,7 +233,7 @@ fun DetailDeviceScreen(
                 }
             }
 
-            // Status & Kecepatan (tetap sama seperti sebelumnya)
+            // status & kecepatan
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -260,7 +259,7 @@ fun DetailDeviceScreen(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(Color(0xFFE6F4EA))
-                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                                .padding(horizontal = 12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color(0xFF10B981)))
@@ -297,9 +296,9 @@ fun DetailDeviceScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-// ── Tombol Atur Geofence ──────────────────────────────────────────────
+            // button geofence
             OutlinedButton(
-                onClick = { onNavigateToGeofencing(deviceId) },  // ← callback baru
+                onClick = { onNavigateToGeofencing(deviceId) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -323,7 +322,7 @@ fun DetailDeviceScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // ── Tombol Hapus Perangkat ────────────────────────────────────
+            // button delete device
             OutlinedButton(
                 onClick = { viewModel.removeDevice() },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -352,7 +351,7 @@ fun DetailDeviceScreen(
     }
 }
 
-// ── Komponen ReadOnly (ganti EditableInfoRow) ───────────────────────────────
+// informasi umum
 
 @Composable
 fun ReadOnlyInfoRow(iconRes: Int, label: String, value: String) {

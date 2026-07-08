@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.trackmate.app.domain.repository.VehicleRepository
+import com.trackmate.app.utils.GeofenceManager
 import com.trackmate.app.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,7 +29,8 @@ data class DetailDeviceUiState(
 @HiltViewModel
 class DetailDeviceViewModel @Inject constructor(
     private val vehicleRepository: VehicleRepository,
-    private val firestore: FirebaseFirestore          // ← untuk ambil lat/lng realtime
+    private val firestore: FirebaseFirestore,
+    private val geofenceManager: GeofenceManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DetailDeviceUiState())
@@ -73,6 +75,7 @@ class DetailDeviceViewModel @Inject constructor(
 
     fun removeDevice() {
         viewModelScope.launch {
+            geofenceManager.stopGeofenceCheck(_uiState.value.deviceId)
             _uiState.value = _uiState.value.copy(isLoading = true)
             when (val result = vehicleRepository.removeUserDevice(
                 deviceId = _uiState.value.deviceId,
@@ -90,4 +93,6 @@ class DetailDeviceViewModel @Inject constructor(
             }
         }
     }
+
+
 }

@@ -23,15 +23,17 @@ import com.trackmate.app.presentation.theme.TrackMateTheme
 fun DetailDevicePopUp(vehicle: Vehicle) {
     Box(
         modifier = Modifier
-            .shadow(8.dp, RoundedCornerShape(12.dp))
-            .background(Color(0xFF212121))
+//            .shadow(8.dp, RoundedCornerShape(12.dp))
+            .background(
+                color = Color(0xFF2E3132).copy(alpha = 0.6f),
+                shape = RoundedCornerShape(12.dp))
             .padding(16.dp)
-            .width(220.dp)
+            .width(160.dp)
     ) {
         Column {
             Text(
                 text = "Waktu Aktivasi: ${vehicle.activationTime}",
-                color = Color.LightGray,
+                color = Color.White,
                 fontSize = 10.sp
             )
             Spacer(modifier = Modifier.height(12.dp))
@@ -56,7 +58,7 @@ fun DetailDevicePopUp(vehicle: Vehicle) {
             // Hanya tampilkan baterai jika data tersedia
             if (vehicle.batteryText != "-") {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = "Baterai:", color = Color.LightGray, fontSize = 10.sp)
+                    Text(text = "Baterai:", color = Color.White, fontSize = 10.sp)
                     Spacer(modifier = Modifier.width(8.dp))
                     Box(
                         modifier = Modifier

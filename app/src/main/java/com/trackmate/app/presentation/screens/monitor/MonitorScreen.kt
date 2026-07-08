@@ -37,6 +37,7 @@ import com.trackmate.app.presentation.components.MapControlButton
 import com.trackmate.app.presentation.components.MapControlDivider
 import com.trackmate.app.presentation.components.MapControlGroupVertical
 import com.trackmate.app.presentation.components.DeviceActionMenu
+import com.trackmate.app.utils.myShadow
 import kotlinx.coroutines.launch
 
 @SuppressLint("MissingPermission")
@@ -153,6 +154,9 @@ fun MonitorScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .myShadow(
+                    color = Color(0xFF000000).copy(alpha = 0.05f)
+                )
                 .background(color = MaterialTheme.colorScheme.background)
                 .padding(top = 24.dp, bottom = 12.dp),
             contentAlignment = Alignment.Center

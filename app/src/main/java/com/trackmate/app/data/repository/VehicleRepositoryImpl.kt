@@ -13,6 +13,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
+import com.trackmate.app.domain.model.EventType
+import com.trackmate.app.domain.model.HistoryEvent
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
+import java.util.TimeZone
 
 class VehicleRepositoryImpl @Inject constructor(
     private val firestore: FirebaseFirestore
@@ -309,5 +315,85 @@ class VehicleRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Resource.Error(e.message ?: "Gagal mengambil data geofence")
         }
+    }
+
+    override fun getNotificationsRealtime(userId: String): Flow<Resource<List<HistoryEvent>>> =
+        callbackFlow {
+            trySend(Resource.Loading)
+
+            val listener = firestore
+                .collection("users")
+                .document(userId)
+                .collection("notifications")
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .addSnapshotListener { snapshot, error ->
+                    if (error != null) {
+                        trySend(Resource.Error(error.message ?: "Gagal memuat riwayat"))
+                        return@addSnapshotListener
+                    }
+
+                    if (snapshot == null) return@addSnapshotListener
+
+                    val events = snapshot.documents.mapNotNull { doc ->
+                        val typeString = doc.getString("type") ?: return@mapNotNull null
+                        val timestampRaw = doc.getString("timestamp") ?: return@mapNotNull null
+
+                        val type = try {
+                            EventType.valueOf(typeString)
+                        } catch (e: Exception) {
+                            EventType.UNKNOWN
+                        }
+
+                        HistoryEvent(
+                            id = doc.id,
+                            type = type,
+                            deviceId = doc.getString("deviceId") ?: "",
+                            vehicleName = doc.getString("vehicleName") ?: "-",
+                            vehicleType = doc.getString("vehicleType") ?: "",
+                            distance = doc.getDouble("distance")?.toFloat() ?: 0f,
+                            radius = doc.getDouble("radius")?.toFloat() ?: 0f,
+                            mode = doc.getString("mode") ?: "",
+                            timestampRaw = timestampRaw,
+                            timestampDisplay = formatTimestamp(timestampRaw)
+                        )
+                    }
+
+                    trySend(Resource.Success(events))
+                }
+
+            awaitClose { listener.remove() }
+        }
+
+    // timeStamp
+    private fun formatTimestamp(isoTimestamp: String): String {
+        return try {
+            val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault()).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
+            }
+            val date = isoFormat.parse(isoTimestamp) ?: return isoTimestamp
+
+            val eventCal = Calendar.getInstance().apply { time = date }
+            val nowCal = Calendar.getInstance()
+            val yesterdayCal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }
+
+            val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+            val timeStr = timeFormat.format(date)
+
+            when {
+                isSameDay(eventCal, nowCal) -> "Hari ini, $timeStr"
+                isSameDay(eventCal, yesterdayCal) -> "Kemarin, $timeStr"
+                else -> {
+                    val dateFormat = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
+                    dateFormat.format(date)
+                }
+            }
+        } catch (e: Exception) {
+            isoTimestamp
+        }
+    }
+
+    private fun isSameDay(cal1: Calendar, cal2: Calendar): Boolean {
+        return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
+                cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
     }
 }

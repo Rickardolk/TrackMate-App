@@ -31,6 +31,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 import com.trackmate.app.R
 import com.trackmate.app.presentation.components.MapControlButton
+import com.trackmate.app.utils.myShadow
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -46,10 +47,10 @@ fun ReplayScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    // ── State untuk bottom sheet waktu ──────────────────────────────────────
+    // State untuk bottom sheet waktu
     var showTimePicker by remember { mutableStateOf(true) }
 
-    // Default: hari ini, jam 00:00 s/d sekarang
+    //Default hari ini
     var startDate by remember { mutableStateOf(LocalDate.now()) }
     var startTime by remember { mutableStateOf(LocalTime.of(0, 0)) }
     var endDate by remember { mutableStateOf(LocalDate.now()) }
@@ -58,16 +59,15 @@ fun ReplayScreen(
     val dateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
-    // ── Format ISO 8601 untuk query Firestore ────────────────────────────────
-    // Timestamp di Firestore format: "2026-06-27T03:57:07Z"
+    // Format ISO 8601 untuk query Firestore ────────────────────────────────
     val isoFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
 
-    // ── Kamera peta ──────────────────────────────────────────────────────────
+    // Kamera peta
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(LatLng(-7.5, 110.5), 13f)
     }
 
-    // ── Otomatis geser kamera ke posisi marker saat replay berjalan ──────────
+    // Otomatis geser kamera
     val currentPoint = uiState.historyPoints.getOrNull(uiState.currentIndex)
     LaunchedEffect(currentPoint) {
         currentPoint?.let {
@@ -77,13 +77,13 @@ fun ReplayScreen(
         }
     }
 
-    // ── Speed options ────────────────────────────────────────────────────────
+    // speed Option
     val speedOptions = listOf(1f, 2f, 4f, 8f)
     var showSpeedMenu by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
 
-        // ── LAYER 0: PETA ────────────────────────────────────────────────────
+        // maps
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
@@ -94,14 +94,14 @@ fun ReplayScreen(
                 myLocationButtonEnabled = false
             )
         ) {
-            // Gambar polyline jalur lengkap (warna abu-abu)
+            // Gambar polyline
             if (uiState.historyPoints.size > 1) {
                 Polyline(
                     points = uiState.historyPoints.map { LatLng(it.latitude, it.longitude) },
                     color = Color.Gray.copy(alpha = 0.5f),
                     width = 8f
                 )
-                // Gambar polyline jalur yang sudah dilalui (warna hijau)
+                // Gambar polyline jalur
                 val traveledPoints = uiState.historyPoints
                     .take(uiState.currentIndex + 1)
                     .map { LatLng(it.latitude, it.longitude) }
@@ -129,34 +129,53 @@ fun ReplayScreen(
             }
         }
 
-        // ── LAYER 1: HEADER ──────────────────────────────────────────────────
-        Row(
+        // header
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color.White)
-                .padding(top = 24.dp, bottom = 12.dp, start = 8.dp, end = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .myShadow(
+                    color = Color(0xFF000000).copy(alpha = 0.05f),
+                    offsetY = 4.dp,
+                    blurRadius = 8.dp
+                )
+                .background(color = MaterialTheme.colorScheme.background)
+                .padding(top = 24.dp, bottom = 12.dp)
         ) {
-            IconButton(onClick = onBack) {
+            // tombol back
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(start = 24.dp)
+                    .size(44.dp)
+                    .myShadow(
+                        color = Color(0xFF000000).copy(alpha = 0.06f),
+                        offsetY = 4.dp,
+                        blurRadius = 12.dp,
+                        borderRadius = 12.dp
+                    )
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color.White)
+                    .clickable { onBack() },
+                contentAlignment = Alignment.Center
+            ) {
                 Icon(
                     imageVector = Icons.Default.ArrowBack,
                     contentDescription = "Back",
                     tint = Color.Black
                 )
             }
+
+            // Judul di tengah
             Text(
                 text = "Putar Ulang",
                 fontSize = 20.sp,
-                fontWeight = FontWeight.Medium,
+                fontWeight = FontWeight.SemiBold,
                 color = Color.Black,
-                modifier = Modifier.weight(1f),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                modifier = Modifier.align(Alignment.Center)
             )
-            // Spacer agar judul tetap center
-            Spacer(modifier = Modifier.width(48.dp))
         }
 
-        // ── LAYER 2: KONTROL KANAN ATAS ──────────────────────────────────────
+        // map control button
         Column(
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -169,7 +188,6 @@ fun ReplayScreen(
                 iconColor = Color.White,
                 onClick = {}
             )
-            // Tombol info — buka kembali sheet pemilihan waktu
             MapControlButton(
                 iconRes = R.drawable.ic_info,
                 containerColor = Color(0xFF141718).copy(alpha = 0.5f),
@@ -178,12 +196,11 @@ fun ReplayScreen(
             )
         }
 
-        // ── LAYER 3: LOADING ─────────────────────────────────────────────────
         if (uiState.isLoading) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         }
 
-        // ── LAYER 4: KONTROL PLAYBACK (BAWAH) ───────────────────────────────
+        // control play back
         AnimatedVisibility(
             visible = uiState.hasLoaded && uiState.historyPoints.isNotEmpty() && !showTimePicker,
             enter = slideInVertically(initialOffsetY = { it }),
@@ -271,7 +288,7 @@ fun ReplayScreen(
             }
         }
 
-        // ── LAYER 5: ERROR TIDAK ADA RIWAYAT ─────────────────────────────────
+        // error tidak ada riwayat
         if (uiState.hasLoaded && uiState.historyPoints.isEmpty() && uiState.errorMessage != null && !showTimePicker) {
             Box(
                 modifier = Modifier
@@ -299,7 +316,7 @@ fun ReplayScreen(
             }
         }
 
-        // ── LAYER 6: BOTTOM SHEET PEMILIHAN WAKTU ────────────────────────────
+        // bottom pemilihan waktu
         AnimatedVisibility(
             visible = showTimePicker,
             enter = slideInVertically(initialOffsetY = { it }),
@@ -324,11 +341,15 @@ fun ReplayScreen(
                     )
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    // ── Pilih Cepat ──────────────────────────────────────────
+                    // pilih cepat
                     Text("Pilih Cepat", fontWeight = FontWeight.Medium, fontSize = 14.sp,
                         color = Color.Black, modifier = Modifier.align(Alignment.Start))
                     Spacer(modifier = Modifier.height(8.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start)
+                    ) {
                         QuickSelectButton("Hari Ini", onClick = {
                             startDate = LocalDate.now(); startTime = LocalTime.of(0, 0)
                             endDate = LocalDate.now(); endTime = LocalTime.now()
@@ -345,12 +366,11 @@ fun ReplayScreen(
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    // ── Mulai ────────────────────────────────────────────────
+                    // Mulai
                     Text("Mulai:", fontWeight = FontWeight.Medium, fontSize = 14.sp,
                         color = Color.Black, modifier = Modifier.align(Alignment.Start))
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        // Tanggal mulai
                         DatePickerField(
                             modifier = Modifier.weight(1f),
                             label = startDate.format(dateFormatter),
@@ -362,7 +382,6 @@ fun ReplayScreen(
                                 ).show()
                             }
                         )
-                        // Waktu mulai
                         TimePickerField(
                             label = startTime.format(timeFormatter),
                             onClick = {
@@ -376,12 +395,11 @@ fun ReplayScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // ── Berakhir ─────────────────────────────────────────────
+                    // Berakhir
                     Text("Berakhir:", fontWeight = FontWeight.Medium, fontSize = 14.sp,
                         color = Color.Black, modifier = Modifier.align(Alignment.Start))
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        // Tanggal akhir
                         DatePickerField(
                             modifier = Modifier.weight(1f),
                             label = endDate.format(dateFormatter),
@@ -393,7 +411,6 @@ fun ReplayScreen(
                                 ).show()
                             }
                         )
-                        // Waktu akhir
                         TimePickerField(
                             label = endTime.format(timeFormatter),
                             onClick = {
@@ -407,7 +424,7 @@ fun ReplayScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // ── Tombol Putar ─────────────────────────────────────────
+                    // Tombol Putar
                     Button(
                         onClick = {
                             val start = "${startDate}T${startTime}:00Z"
@@ -434,13 +451,13 @@ fun ReplayScreen(
     }
 }
 
-// ── Komponen kecil ──────────────────────────────────────────────────────────
+// Komponen kecil
 
 @Composable
 private fun QuickSelectButton(label: String, onClick: () -> Unit) {
     OutlinedButton(
         onClick = onClick,
-        shape = RoundedCornerShape(50),
+        shape = RoundedCornerShape(12.dp),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
     ) {

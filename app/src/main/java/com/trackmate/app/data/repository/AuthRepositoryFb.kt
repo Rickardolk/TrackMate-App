@@ -32,14 +32,22 @@ class AuthRepositoryFb @Inject constructor(
     }
 
     override suspend fun register(
+        username: String,
         email: String,
         password: String
     ): Flow<Resource<String>> = flow {
         emit(Resource.Loading)
         try {
             val result = firebaseAuth.createUserWithEmailAndPassword(email, password).await()
-            val uid = result.user?.uid ?: throw Exception("Gagal registrasi")
-            emit(Resource.Success(uid))
+            val user = result.user ?: throw Exception("Gagal registrasi")
+
+            // ← TAMBAHAN: simpan username sebagai displayName
+            val profileUpdates = com.google.firebase.auth.UserProfileChangeRequest.Builder()
+                .setDisplayName(username)
+                .build()
+            user.updateProfile(profileUpdates).await()
+
+            emit(Resource.Success(user.uid))
         }catch (e: Exception) {
             emit(Resource.Error(translateError(e)))
         }
@@ -55,30 +63,44 @@ class AuthRepositoryFb @Inject constructor(
         }
     }
 
+    // ← FUNGSI BARU: update username
+    override suspend fun updateUsername(newUsername: String): Flow<Resource<String>> = flow {
+        emit(Resource.Loading)
+        try {
+            val user = firebaseAuth.currentUser ?: throw Exception("Sesi login tidak ditemukan")
+            val profileUpdates = com.google.firebase.auth.UserProfileChangeRequest.Builder()
+                .setDisplayName(newUsername)
+                .build()
+            user.updateProfile(profileUpdates).await()
+            emit(Resource.Success(newUsername))
+        } catch (e: Exception) {
+            emit(Resource.Error(e.message ?: "Gagal memperbarui nama"))
+        }
+    }
+
+    // ← FUNGSI BARU: ambil data user saat ini
+    override fun getCurrentUsername(): String {
+        return firebaseAuth.currentUser?.displayName ?: "Pengguna"
+    }
+
+    override fun getCurrentEmail(): String {
+        return firebaseAuth.currentUser?.email ?: "-"
+    }
+
     private fun translateError(exception: Exception) :String {
         return when (exception) {
-            is FirebaseAuthWeakPasswordException -> {
-                "Password minimal 6 karakter"
-            }
+            is FirebaseAuthWeakPasswordException -> "Password minimal 6 karakter"
             is FirebaseAuthInvalidCredentialsException -> {
-                if (exception.message?.contains("badly formatted" , ignoreCase = true) == true) {
+                if (exception.message?.contains("badly formatted", ignoreCase = true) == true) {
                     "Format email tidak valid"
                 } else {
                     "Email atau password Anda salah"
                 }
             }
-            is FirebaseAuthInvalidUserException -> {
-                "Email atau password Anda salah"
-            }
-            is FirebaseAuthUserCollisionException -> {
-                "Email sudah terdaftar. Silahkan gunakan email lain atau login"
-            }
-            is FirebaseAuthActionCodeException -> {
-                "Gagal melakukan registrasi"
-            }
-            else -> {
-                "Terjadi kesalahan jaringan. Silahkan coba lagi"
-            }
+            is FirebaseAuthInvalidUserException -> "Email atau password Anda salah"
+            is FirebaseAuthUserCollisionException -> "Email sudah terdaftar. Silahkan gunakan email lain atau login"
+            is FirebaseAuthActionCodeException -> "Gagal melakukan registrasi"
+            else -> "Terjadi kesalahan jaringan. Silahkan coba lagi"
         }
     }
 }

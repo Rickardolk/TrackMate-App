@@ -1,6 +1,7 @@
 package com.trackmate.app.domain.repository
 
 import com.trackmate.app.domain.model.GeofenceConfig
+import com.trackmate.app.domain.model.HistoryEvent
 import com.trackmate.app.domain.model.LocationHistory
 import com.trackmate.app.domain.model.Vehicle
 import com.trackmate.app.utils.Resource
@@ -55,5 +56,7 @@ interface VehicleRepository {
         userId: String,
         deviceId: String
     ): Resource<GeofenceConfig?>
+
+    fun getNotificationsRealtime(userId: String): Flow<Resource<List<HistoryEvent>>>
 }
 

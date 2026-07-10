@@ -155,13 +155,20 @@ fun MonitorScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .myShadow(
-                    color = Color(0xFF000000).copy(alpha = 0.05f)
+                    color = Color(0xFF000000).copy(alpha = 0.05f),
+                    offsetY = 4.dp,
+                    blurRadius = 8.dp
                 )
                 .background(color = MaterialTheme.colorScheme.background)
                 .padding(top = 24.dp, bottom = 12.dp),
             contentAlignment = Alignment.Center
         ) {
-            Text("Monitor", fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = Color.Black)
+            Text(
+                "Monitor" ,
+                fontSize = 20.sp ,
+                fontWeight = FontWeight.SemiBold ,
+                color = Color(0xFF23262F)
+            )
         }
 
         if (uiState.isLoading) {

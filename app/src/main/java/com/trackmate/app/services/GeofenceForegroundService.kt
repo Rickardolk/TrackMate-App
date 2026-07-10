@@ -43,7 +43,7 @@ class GeofenceForegroundService : Service() {
         const val ALERT_CHANNEL_ID = "geofence_alert_channel"
         const val FOREGROUND_NOTIFICATION_ID = 2001
         const val ALERT_NOTIFICATION_ID = 2002
-        const val CHECK_INTERVAL_MS = 20_000L // cek setiap 30 detik
+        const val CHECK_INTERVAL_MS = 20_000L
 
         fun startIntent(context: Context, deviceId: String): Intent {
             return Intent(context, GeofenceForegroundService::class.java).apply {
@@ -160,9 +160,10 @@ class GeofenceForegroundService : Service() {
                         .collection("devices").document(deviceId)
                         .get().await()
                     val vehicleName = deviceDoc.getString("vehicleName") ?: deviceId
+                    val vehicleType = deviceDoc.getString("vehicleType") ?: ""
 
                     showAlertNotification(vehicleName, distance.toInt(), radius.toInt())
-                    saveGeofenceEvent(userId, deviceId, vehicleName, distance, radius, mode)
+                    saveGeofenceEvent(userId, deviceId, vehicleName, vehicleType, distance, radius, mode)
                 }
                 // Jika notifikasi masih ada di tray → tidak kirim lagi (anti-spam)
 
@@ -252,6 +253,7 @@ class GeofenceForegroundService : Service() {
         userId: String,
         deviceId: String,
         vehicleName: String,
+        vehicleType: String,
         distance: Float,
         radius: Float,
         mode: String
@@ -264,6 +266,7 @@ class GeofenceForegroundService : Service() {
             "type" to "GEOFENCE_VIOLATION",
             "deviceId" to deviceId,
             "vehicleName" to vehicleName,
+            "vehicleType" to vehicleType,
             "distance" to distance,
             "radius" to radius,
             "mode" to mode,

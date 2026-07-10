@@ -24,5 +24,6 @@ sealed class Screen(
     object Geofencing : Screen("geofencing_screen/{deviceId}") {
         fun createRoute(deviceId: String) = "geofencing_screen/$deviceId"
     }
+    object ProfileEdit : Screen("profile_edit_screen")
 
 }

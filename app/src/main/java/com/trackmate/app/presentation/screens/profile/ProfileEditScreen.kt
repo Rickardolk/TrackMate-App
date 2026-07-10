@@ -24,8 +24,11 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-// ─── Colors ───────────────────────────────────────────────────────────────────
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.trackmate.app.presentation.screens.auth.AuthViewModel
+import com.trackmate.app.utils.Resource
+import com.trackmate.app.utils.myShadow
 
 private val BackgroundGray = Color(0xFFF2F2F7)
 private val CardWhite      = Color(0xFFFFFFFF)
@@ -35,7 +38,28 @@ private val TextHint       = Color(0xFFAAAAAA)
 private val DividerColor   = Color(0xFFD1D1D6)
 private val AvatarBg       = Color(0xFFDDDDDD)
 
-// ─── Screen ───────────────────────────────────────────────────────────────────
+@Composable
+fun ProfileEditScreenRoute(
+    onBackClick: () -> Unit,
+    viewModel: AuthViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.profileUiState.collectAsStateWithLifecycle()
+
+    // Kembali otomatis setelah berhasil update
+    LaunchedEffect(uiState.updateUsernameState) {
+        if (uiState.updateUsernameState is Resource.Success) {
+            viewModel.resetUpdateUsernameState()
+            onBackClick()
+        }
+    }
+
+    ProfileEditScreen(
+        initialName = uiState.userName,
+        onBackClick = onBackClick,
+        onPickPhoto = {  },
+        onSaveChanges = { newName -> viewModel.updateUsername(newName) }
+    )
+}
 
 @Composable
 fun ProfileEditScreen(
@@ -69,7 +93,7 @@ fun ProfileEditScreen(
 
             Spacer(modifier = Modifier.height(36.dp))
 
-            // ── Nama Lengkap Field ────────────────────────────────────────
+            //Nama Lengkap Field
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     text = "Nama Lengkap",
@@ -108,12 +132,11 @@ fun ProfileEditScreen(
 
             Spacer(modifier = Modifier.height(28.dp))
 
-            // ── Divider ───────────────────────────────────────────────────
             HorizontalDivider(color = DividerColor, thickness = 1.dp)
 
             Spacer(modifier = Modifier.height(28.dp))
 
-            // ── Save Button ───────────────────────────────────────────────
+            //Save Button
             Button(
                 onClick = { onSaveChanges(fullName) },
                 modifier = Modifier
@@ -135,49 +158,56 @@ fun ProfileEditScreen(
     }
 }
 
-// ─── Top Bar ──────────────────────────────────────────────────────────────────
-
-@OptIn(ExperimentalMaterial3Api::class)
+//Top Bar
 @Composable
 private fun ProfileEditTopBar(onBackClick: () -> Unit) {
-    TopAppBar(
-        title = {
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Text(
-                    text = "Edit Profil",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .myShadow(
+                color = Color(0xFF000000).copy(alpha = 0.05f),
+                offsetY = 4.dp,
+                blurRadius = 8.dp
+            )
+            .background(color = MaterialTheme.colorScheme.background)
+            .padding(top = 24.dp, bottom = 12.dp)
+    ) {
+        //button back
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(start = 24.dp)
+                .size(44.dp)
+                .myShadow(
+                    color = Color(0xFF000000).copy(alpha = 0.06f),
+                    offsetY = 4.dp,
+                    blurRadius = 12.dp,
+                    borderRadius = 12.dp
                 )
-            }
-        },
-        navigationIcon = {
-            // Rounded square back button
-            Box(
-                modifier = Modifier
-                    .padding(start = 12.dp)
-                    .size(44.dp)
-                    .shadow(elevation = 2.dp, shape = RoundedCornerShape(12.dp))
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(CardWhite)
-                    .clickable { onBackClick() },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Kembali",
-                    tint = TextPrimary,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        },
-        // Invisible trailing item to keep title truly centered
-        actions = { Spacer(modifier = Modifier.size(56.dp)) },
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = CardWhite)
-    )
+                .clip(RoundedCornerShape(12.dp))
+                .background(CardWhite)
+                .clickable { onBackClick() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Kembali",
+                tint = TextPrimary,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
+        Text(
+            text = "Edit Profil",
+            fontSize = 20.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = TextPrimary,
+            modifier = Modifier.align(Alignment.Center)
+        )
+    }
 }
 
-// ─── Avatar Picker ────────────────────────────────────────────────────────────
+//Avatar Picker
 
 @Composable
 private fun AvatarPicker(
@@ -230,7 +260,7 @@ private fun AvatarPicker(
     }
 }
 
-// ─── Preview ──────────────────────────────────────────────────────────────────
+//Preview
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable

@@ -26,6 +26,19 @@ class AuthViewModel @Inject constructor(
     private val _profileUiState = MutableStateFlow(ProfileUiState())
     val profileUiState: StateFlow<ProfileUiState> = _profileUiState.asStateFlow()
 
+    init {
+        loadProfile()
+    }
+
+    private fun loadProfile() {
+        _profileUiState.update {
+            it.copy(
+                userName = authRepository.getCurrentUsername(),
+                userEmail = authRepository.getCurrentEmail()
+            )
+        }
+    }
+
     fun onUsernameChange(newUserName: String) {
         _authUiState.update { it.copy(username = newUserName) }
     }
@@ -48,21 +61,23 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             authRepository.login(currentState.email, currentState.password).collect { result ->
                 _authUiState.update { it.copy(authState = result) }
+                if (result is Resource.Success) loadProfile()
             }
         }
     }
 
     fun register() {
         val currentState = _authUiState.value
-
         if (currentState.username.isBlank() || currentState.email.isBlank() || currentState.password.isBlank()) {
             _authUiState.update { it.copy(authState = Resource.Error("Semua kolom harus diisi")) }
             return
         }
         viewModelScope.launch {
-            authRepository.register(currentState.email, currentState.password).collect { result ->
-                _authUiState.update { it.copy(authState = result) }
-            }
+            authRepository.register(currentState.username, currentState.email, currentState.password)
+                .collect { result ->
+                    _authUiState.update { it.copy(authState = result) }
+                    if (result is Resource.Success) loadProfile()
+                }
         }
     }
 
@@ -83,5 +98,26 @@ class AuthViewModel @Inject constructor(
 
     fun resetLogoutState() {
         _profileUiState.update { it.copy(logoutState = null) }
+    }
+
+    fun updateUsername(newUsername: String) {
+        if (newUsername.isBlank()) {
+            _profileUiState.update {
+                it.copy(updateUsernameState = Resource.Error("Nama tidak boleh kosong"))
+            }
+            return
+        }
+        viewModelScope.launch {
+            authRepository.updateUsername(newUsername).collect { result ->
+                _profileUiState.update { it.copy(updateUsernameState = result) }
+                if (result is Resource.Success) {
+                    _profileUiState.update { it.copy(userName = newUsername) }
+                }
+            }
+        }
+    }
+
+    fun resetUpdateUsernameState() {
+        _profileUiState.update { it.copy(updateUsernameState = null) }
     }
 }

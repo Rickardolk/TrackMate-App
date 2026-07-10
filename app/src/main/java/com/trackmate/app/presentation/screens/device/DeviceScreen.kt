@@ -134,7 +134,7 @@ fun DeviceScreen(
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
 
-            // --- BAGIAN 1: HEADER & TABS (Desain Baru) ---
+            // header
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -143,16 +143,16 @@ fun DeviceScreen(
                         offsetY = 4.dp,
                         blurRadius = 8.dp
                     )
-                    .background(Color.White)
+                    .background(color = MaterialTheme.colorScheme.background)
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 24.dp)
+                        .padding(top = 16.dp)
                 ) {
                     Text(
                         text = "Perangkat",
-                        fontSize = 24.sp,
+                        fontSize = 20.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFF23262F),
                         modifier = Modifier.align(Alignment.Center)
@@ -201,7 +201,7 @@ fun DeviceScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- BAGIAN 2: AREA KONTEN (Card Lama + Search Baru) ---
+            // list card
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -209,7 +209,6 @@ fun DeviceScreen(
                     .nestedScroll(nestedScrollConnection)
             ) {
 
-                // 2A: Daftar Perangkat (LazyColumn)
                 LazyColumn(
                     state = listState,
                     contentPadding = PaddingValues(top = searchBarHeightDp, bottom = 100.dp, start = 16.dp, end = 16.dp), // Padding diubah menyesuaikan desain baru
@@ -254,12 +253,11 @@ fun DeviceScreen(
                     }
                 }
 
-                // 2B: Search & Filter Floating (Desain Baru)
+                // search
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .offset { IntOffset(x = 0, y = searchBarOffsetPx.roundToInt()) }
-                        // Background menutupi item di belakangnya saat search bar terlihat
                         .background(MaterialTheme.colorScheme.background)
                 ) {
                     Row(
@@ -341,14 +339,14 @@ fun DeviceScreen(
     }
 }
 
-// --- KOMPONEN BANTUAN ---
+
 
 @Composable
 fun DeviceTab(
     text: String,
     dotColor: Color? = null,
     isSelected: Boolean,
-    onClick: () -> Unit // Tambahan parameter onClick
+    onClick: () -> Unit
 ) {
     TextButton(
         onClick = onClick
@@ -385,7 +383,7 @@ fun DeviceTab(
     }
 }
 
-// DeviceCard LAMA TETAP SAMA
+// DeviceCard
 @Composable
 fun DeviceCard(
     device: DeviceItem,

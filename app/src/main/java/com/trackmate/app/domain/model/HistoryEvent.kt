@@ -12,6 +12,7 @@ data class HistoryEvent(
     val type: EventType,
     val deviceId: String,
     val vehicleName: String,
+    val vehicleType: String = "",
     val distance: Float = 0f,
     val radius: Float = 0f,
     val mode: String = "",

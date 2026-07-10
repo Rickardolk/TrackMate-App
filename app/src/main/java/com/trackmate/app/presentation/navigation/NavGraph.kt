@@ -29,6 +29,7 @@ import com.trackmate.app.presentation.screens.monitor.MonitorScreen
 import com.trackmate.app.presentation.screens.onboarding.OnboardingScreen
 import com.trackmate.app.presentation.screens.profile.ProfileScreen
 import com.trackmate.app.presentation.screens.history.HistoryScreen
+import com.trackmate.app.presentation.screens.profile.ProfileEditScreenRoute
 import com.trackmate.app.presentation.screens.profile.ProfileScreenRoute
 
 @Composable
@@ -165,7 +166,16 @@ fun NavGraph(
                         navController.navigate(Screen.Welcome.route) {
                             popUpTo(0) { inclusive = true }
                         }
+                    },
+                    onNavigateToEditProfile = {
+                        navController.navigate(Screen.ProfileEdit.route)
                     }
+                )
+            }
+
+            composable(route = Screen.ProfileEdit.route) {
+                ProfileEditScreenRoute(
+                    onBackClick = { navController.popBackStack() }
                 )
             }
 
